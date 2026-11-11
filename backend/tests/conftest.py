@@ -2,7 +2,9 @@
 
 The suite must never reach the network (SPEC AC8, Locked intent #12), so an
 autouse guard replaces every outbound socket entry point with a function that
-raises before any packet leaves the process.
+raises before any packet leaves the process. The ``migrated_engine`` and
+``migrated_session`` fixtures give integration tests the schema that actually
+ships, produced by ``alembic upgrade head`` rather than by the ORM metadata.
 """
 
 from __future__ import annotations
@@ -14,8 +16,18 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from alembic import command
+from alembic.config import Config
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
+
+from khaleev import paths
+from khaleev.db import create_engine, create_session_factory
 
 KHALEEV_ENV_PREFIX = "KHALEEV_"
+
+ALEMBIC_INI = paths.BACKEND_ROOT / "alembic.ini"
+MIGRATIONS_DIR = paths.PACKAGE_ROOT / "migrations"
 
 
 class NetworkAccessBlocked(OSError):
@@ -55,3 +67,34 @@ def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv(f"{KHALEEV_ENV_PREFIX}DATA_DIR", str(tmp_path))
     return tmp_path
+
+
+def alembic_config() -> Config:
+    """Alembic config bound to this checkout, independent of the cwd."""
+    config = Config(str(ALEMBIC_INI))
+    config.set_main_option("script_location", str(MIGRATIONS_DIR))
+    return config
+
+
+@pytest.fixture
+def migrated_engine(isolated_data_dir: Path) -> Iterator[Engine]:
+    """A throwaway SQLite database whose schema comes from ``alembic upgrade head``.
+
+    Integration tests exercise the migrated schema, not one built by
+    ``Base.metadata.create_all``, so a drift between the models and the shipped
+    migration cannot hide behind a test-only schema. The data directory is the
+    per-test ``tmp_path`` because ``env.py`` resolves ``Settings.data_dir``.
+    """
+    command.upgrade(alembic_config(), "head")
+    engine = create_engine(isolated_data_dir)
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture
+def migrated_session(migrated_engine: Engine) -> Iterator[Session]:
+    """A session bound to the migrated schema of ``migrated_engine``."""
+    with create_session_factory(migrated_engine)() as session:
+        yield session
