@@ -1,10 +1,12 @@
 """Turn uploaded PDF bytes into a stored document, idempotently.
 
 The pipeline is deliberately free of HTTP concerns: routes, CLI commands and
-tests all call the same function. Chunking and embedding extend this step in
-later tasks; the contract that already matters here is content-hash dedupe —
-identical bytes must never produce a second document or a second stored file
-(AC1, F1).
+tests all call the same function. It extracts every page, chunks each page
+without ever crossing a page boundary, and persists ``(document_id,
+page_number, chunk_index, text)`` with a nullable ``embedding_ref`` that a later
+task fills in. The contract that already matters here is content-hash dedupe —
+identical bytes must never produce a second document, a second stored file, or a
+second set of chunks (AC1, F1).
 """
 
 from __future__ import annotations
@@ -17,8 +19,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from khaleev import paths
+from khaleev.config import Settings
+from khaleev.ingest.chunking import chunk_pages
 from khaleev.ingest.pdf import extract_pages
-from khaleev.models import Document
+from khaleev.models import Chunk, Document
 
 # Extensions are PDF-only (SPEC non-goals): Markdown/DOCX/HTML are not ingested.
 PDF_SUFFIX = ".pdf"
@@ -58,13 +62,17 @@ def ingest_pdf(
     pdf_bytes: bytes,
     filename: str,
     data_dir: Path,
+    *,
+    settings: Settings | None = None,
 ) -> IngestResult:
     """Store ``pdf_bytes`` once and return its ``documents`` row.
 
     Identical bytes are deduped by content hash before extraction, so a re-upload
-    costs one query and returns the existing row (AC1). New bytes are validated,
-    written to ``<data_dir>/pdfs/<content_hash>.pdf``, then committed with their
-    title and page count.
+    costs one query and returns the existing row without touching its chunks
+    (AC1). New bytes are validated, written to
+    ``<data_dir>/pdfs/<content_hash>.pdf``, then committed with their title,
+    page count and one ``chunks`` row per page slice. ``embedding_ref`` stays
+    ``None`` until the embedding task indexes the chunks.
     """
     digest = content_hash(pdf_bytes)
     existing = _existing_document(session, digest)
@@ -82,5 +90,17 @@ def ingest_pdf(
         page_count=len(pages),
     )
     session.add(document)
+    # The chunks need the generated id, so flush before inserting them.
+    session.flush()
+    for chunk in chunk_pages(pages, settings):
+        session.add(
+            Chunk(
+                document_id=document.id,
+                page_number=chunk.page_number,
+                chunk_index=chunk.chunk_index,
+                text=chunk.text,
+                embedding_ref=None,
+            )
+        )
     session.commit()
     return IngestResult(document=document, created=True)
