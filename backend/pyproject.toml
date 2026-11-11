@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Khaleev - local-first PDF Q&A with page-cited answers and eval metrics"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.20.1",
     "pydantic-settings>=2.16.2",
+    "sqlalchemy>=2.1.8",
 ]
 
 [dependency-groups]
