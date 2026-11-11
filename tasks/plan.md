@@ -6,7 +6,7 @@ Execute the tasks **sequentially in the order listed** — each task depends onl
 
 ## Tasks
 
-- [ ] T01 — Scaffold backend and frontend toolchains with an offline test guard
+- [x] T01 — Scaffold backend and frontend toolchains with an offline test guard
   - Depends on: none
   - Files: `backend/pyproject.toml`, `backend/src/khaleev/__init__.py`, `backend/src/khaleev/paths.py`, `backend/tests/conftest.py`, `backend/tests/unit/test_smoke.py`, `backend/.env.example`, `frontend/package.json`, `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/tsconfig.node.json`, `frontend/index.html`, `frontend/eslint.config.js`, `frontend/.prettierrc.json`, `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/test/setup.ts`, `frontend/src/__tests__/App.test.tsx`, `docs/references/.gitkeep`
   - Acceptance: `backend` is a `uv` project (Python >= 3.11, ruff line-length 100, pytest configured, `src` layout with the `khaleev` package importable via `uv sync`); `frontend` is a Vite + React + TypeScript project with `strict: true` and a `/api` dev proxy to `http://localhost:8000`; `backend/tests/conftest.py` installs an autouse socket guard that raises on any outbound socket connect so no test can reach the network (AC8, Locked intent #12); a smoke test and a trivial RTL render test exist so `pytest` and `vitest` both exit 0 with no network. Runtime deps introduced: none beyond the toolchains themselves.
