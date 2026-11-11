@@ -5,8 +5,11 @@ description = "Khaleev - local-first PDF Q&A with page-cited answers and eval me
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.20.1",
+    "faiss-cpu>=1.16.0",
+    "numpy>=2.4.6",
     "pydantic-settings>=2.16.2",
     "pypdf>=7.0.1",
+    "sentence-transformers>=6.3.0",
     "sqlalchemy>=2.1.8",
 ]
 

@@ -3,15 +3,20 @@
 The pipeline is deliberately free of HTTP concerns: routes, CLI commands and
 tests all call the same function. It extracts every page, chunks each page
 without ever crossing a page boundary, and persists ``(document_id,
-page_number, chunk_index, text)`` with a nullable ``embedding_ref`` that a later
-task fills in. The contract that already matters here is content-hash dedupe —
-identical bytes must never produce a second document, a second stored file, or a
-second set of chunks (AC1, F1).
+page_number, chunk_index, text)``. When an ``Embedder`` is supplied it also
+embeds those chunks, writes the vectors to the document's FAISS index and stores
+the index id in ``chunks.embedding_ref`` (T06); without one the chunks are stored
+unembedded, which is what the pure chunking tests exercise.
+
+The contract that already matters here is content-hash dedupe — identical bytes
+must never produce a second document, a second stored file, or a second set of
+chunks (AC1, F1), and by extension must never duplicate vectors in the index.
 """
 
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,8 +26,10 @@ from sqlalchemy.orm import Session
 from khaleev import paths
 from khaleev.config import Settings
 from khaleev.ingest.chunking import chunk_pages
+from khaleev.ingest.embedding import Embedder
 from khaleev.ingest.pdf import extract_pages
 from khaleev.models import Chunk, Document
+from khaleev.retrieval.index import VectorIndex, embedding_ref
 
 # Extensions are PDF-only (SPEC non-goals): Markdown/DOCX/HTML are not ingested.
 PDF_SUFFIX = ".pdf"
@@ -57,6 +64,28 @@ def _existing_document(session: Session, digest: str) -> Document | None:
     return session.scalar(select(Document).where(Document.content_hash == digest))
 
 
+def _embed_chunks(embedder: Embedder, chunks: Sequence[Chunk], index: VectorIndex) -> None:
+    """Embed ``chunks``, store their vectors and point each row at its vector.
+
+    The FAISS id is the chunk's own primary key, and ``embedding_ref`` records
+    that id as text, so a search result maps back to a row — and from there to
+    its ``page_number`` — with a single lookup. Both sides are written from the
+    same ``ids`` list, so a mismatch between the database and the index is
+    impossible without an exception.
+    """
+    if not chunks:
+        return
+
+    vectors = embedder.embed_texts([chunk.text for chunk in chunks])
+    if len(vectors) != len(chunks):
+        raise ValueError(f"embedder returned {len(vectors)} vectors for {len(chunks)} chunks")
+
+    ids = [int(chunk.id) for chunk in chunks]
+    index.add(vectors, ids)
+    for chunk, vector_id in zip(chunks, ids, strict=True):
+        chunk.embedding_ref = embedding_ref(vector_id)
+
+
 def ingest_pdf(
     session: Session,
     pdf_bytes: bytes,
@@ -64,15 +93,17 @@ def ingest_pdf(
     data_dir: Path,
     *,
     settings: Settings | None = None,
+    embedder: Embedder | None = None,
 ) -> IngestResult:
     """Store ``pdf_bytes`` once and return its ``documents`` row.
 
     Identical bytes are deduped by content hash before extraction, so a re-upload
-    costs one query and returns the existing row without touching its chunks
-    (AC1). New bytes are validated, written to
+    costs one query and returns the existing row without touching its chunks or
+    its vectors (AC1). New bytes are validated, written to
     ``<data_dir>/pdfs/<content_hash>.pdf``, then committed with their title,
-    page count and one ``chunks`` row per page slice. ``embedding_ref`` stays
-    ``None`` until the embedding task indexes the chunks.
+    page count, one ``chunks`` row per page slice and — when ``embedder`` is
+    given — one vector per chunk in ``<data_dir>/index/<document_id>.faiss``
+    with the matching ``embedding_ref``.
     """
     digest = content_hash(pdf_bytes)
     existing = _existing_document(session, digest)
@@ -92,15 +123,20 @@ def ingest_pdf(
     session.add(document)
     # The chunks need the generated id, so flush before inserting them.
     session.flush()
+    chunks: list[Chunk] = []
     for chunk in chunk_pages(pages, settings):
-        session.add(
-            Chunk(
-                document_id=document.id,
-                page_number=chunk.page_number,
-                chunk_index=chunk.chunk_index,
-                text=chunk.text,
-                embedding_ref=None,
-            )
+        row = Chunk(
+            document_id=document.id,
+            page_number=chunk.page_number,
+            chunk_index=chunk.chunk_index,
+            text=chunk.text,
+            embedding_ref=None,
         )
+        session.add(row)
+        chunks.append(row)
+    if embedder is not None:
+        # The rows need their primary keys before they can be index ids.
+        session.flush()
+        _embed_chunks(embedder, chunks, VectorIndex(layout.root, document.id))
     session.commit()
     return IngestResult(document=document, created=True)
