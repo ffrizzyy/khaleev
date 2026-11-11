@@ -7,11 +7,15 @@ raises before any packet leaves the process.
 
 from __future__ import annotations
 
+import os
 import socket
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
+
+KHALEEV_ENV_PREFIX = "KHALEEV_"
 
 
 class NetworkAccessBlocked(OSError):
@@ -36,3 +40,18 @@ def block_network(monkeypatch: pytest.MonkeyPatch) -> Iterator[type[NetworkAcces
     monkeypatch.setattr(socket.socket, "connect", _blocked_call("socket.connect"))
     monkeypatch.setattr(socket.socket, "connect_ex", _blocked_call("socket.connect_ex"))
     yield NetworkAccessBlocked
+
+
+@pytest.fixture(autouse=True)
+def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point every test at a throwaway data directory (SPEC Boundaries -> Never).
+
+    Inherited ``KHALEEV_*`` variables are dropped so a developer's shell cannot
+    change the outcome of a test, and ``KHALEEV_DATA_DIR`` is pinned to
+    ``tmp_path`` so nothing can write to the user's real data directory.
+    """
+    for name in list(os.environ):
+        if name.startswith(KHALEEV_ENV_PREFIX):
+            monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(f"{KHALEEV_ENV_PREFIX}DATA_DIR", str(tmp_path))
+    return tmp_path
