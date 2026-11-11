@@ -42,7 +42,7 @@ Execute the tasks **sequentially in the order listed** — each task depends onl
   - Acceptance: an `Embedder` protocol exposes `embed_texts(list[str]) -> list[list[float]]` and `embed_query(str) -> list[float]`; the `SentenceTransformerEmbedder` implementation imports `sentence_transformers` lazily and only at call time so tests never load a model, and `FakeEmbedder` (deterministic, seeded from the text) is the only embedder used in tests (Locked intent #12); `VectorIndex` wraps a local FAISS inner-product index stored at `<data_dir>/index/<document_id>.faiss` and supports add, `search_top_k`, `delete_document` and reload-from-disk, with vector ids mapped back to `chunks.embedding_ref`; the ingest pipeline embeds the chunks and writes their vectors to the index (suggestion: `all-MiniLM-L6-v2` + FAISS local file index).
   - Verify: `cd backend && uv run ruff check . && uv run pytest tests/unit/test_embedding.py tests/unit/test_index.py -q`
 
-- [ ] T07 — Implement document-scoped top-k retrieval
+- [x] T07 — Implement document-scoped top-k retrieval
   - Depends on: T06
   - Files: `backend/src/khaleev/retrieval/search.py`, `backend/tests/unit/test_retrieval.py`
   - Acceptance: `retrieve(document_id, question, k)` returns `min(k, n)` chunks ordered by descending similarity score, each carrying `chunk_id`, `page_number`, `chunk_index`, `text` and `score`; no result ever belongs to another document and no result has a missing page number (Boundaries → Always); `k` defaults to the configured 5 and can be overridden per call, and the same `k` value is what gets recorded with an eval run so hit-rate@k stays comparable across runs (suggestion: default k=5).
