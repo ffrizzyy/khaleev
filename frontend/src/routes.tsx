@@ -3,13 +3,14 @@
  *
  * The page bodies here start as intentional placeholders so the shell is
  * navigable and testable before the feature slices land. T11 filled `/`
- * (Library); T12 fills `/chat` (Chat) and T18 fills `/evals` (EvalDashboard);
- * each swap only replaces the `element` of its route, leaving the layout and
- * URLs untouched.
+ * (Library); T12 filled `/chat` (Chat) and T18 will fill `/evals`
+ * (EvalDashboard); each swap only replaces the `element` of its route, leaving
+ * the layout and URLs untouched.
  */
 
 import { NavLink, Outlet, Route, Routes } from "react-router-dom";
 
+import { Chat } from "./pages/Chat";
 import { Library } from "./pages/Library";
 
 /** Shared chrome: product heading, the promise, and primary navigation. */
@@ -31,16 +32,6 @@ function AppLayout() {
         <Outlet />
       </main>
     </div>
-  );
-}
-
-/** Placeholder for the Chat page (F3), replaced by T12. */
-function ChatPlaceholder() {
-  return (
-    <section aria-labelledby="chat-heading">
-      <h2 id="chat-heading">Chat</h2>
-      <p>Ask a question about the selected document and read the page-cited answer.</p>
-    </section>
   );
 }
 
@@ -69,7 +60,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<AppLayout />}>
         <Route index element={<Library />} />
-        <Route path="chat" element={<ChatPlaceholder />} />
+        <Route path="chat" element={<Chat />} />
         <Route path="evals" element={<EvalDashboardPlaceholder />} />
         <Route path="*" element={<NotFound />} />
       </Route>
