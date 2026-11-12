@@ -1,16 +1,15 @@
 /**
  * The app shell: one shared layout plus the three SPEC routes.
  *
- * The page bodies here start as intentional placeholders so the shell is
- * navigable and testable before the feature slices land. T11 filled `/`
- * (Library); T12 filled `/chat` (Chat) and T18 will fill `/evals`
- * (EvalDashboard); each swap only replaces the `element` of its route, leaving
- * the layout and URLs untouched.
+ * The page bodies are filled by their feature slices: T11 `/` (Library), T12
+ * `/chat` (Chat) and T18 `/evals` (EvalDashboard); the layout and URLs stay
+ * untouched.
  */
 
 import { NavLink, Outlet, Route, Routes } from "react-router-dom";
 
 import { Chat } from "./pages/Chat";
+import { EvalDashboard } from "./pages/EvalDashboard";
 import { Library } from "./pages/Library";
 
 /** Shared chrome: product heading, the promise, and primary navigation. */
@@ -35,16 +34,7 @@ function AppLayout() {
   );
 }
 
-/** Placeholder for the eval dashboard (F6), replaced by T18. */
-function EvalDashboardPlaceholder() {
-  return (
-    <section aria-labelledby="evals-heading">
-      <h2 id="evals-heading">Eval dashboard</h2>
-      <p>Retrieval hit rate and answer faithfulness for each eval run, with history.</p>
-    </section>
-  );
-}
-
+/** The catch-all for unknown addresses. */
 function NotFound() {
   return (
     <section aria-labelledby="not-found-heading">
@@ -61,7 +51,7 @@ export function AppRoutes() {
       <Route path="/" element={<AppLayout />}>
         <Route index element={<Library />} />
         <Route path="chat" element={<Chat />} />
-        <Route path="evals" element={<EvalDashboardPlaceholder />} />
+        <Route path="evals" element={<EvalDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
