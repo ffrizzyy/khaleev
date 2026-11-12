@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from khaleev import db
 from khaleev.config import Settings
+from khaleev.evals.scorer import EntailmentScorer, LocalEntailmentScorer
 from khaleev.generation import Generator, build_generator
 from khaleev.ingest.embedding import Embedder, SentenceTransformerEmbedder
 
@@ -38,10 +39,12 @@ class AppServices:
         *,
         embedder: Embedder | None = None,
         generator: Generator | None = None,
+        scorer: EntailmentScorer | None = None,
     ) -> None:
         self.settings = settings
         self._embedder = embedder
         self._generator = generator
+        self._scorer = scorer
         self._injected_embedder = embedder is not None
         self._injected_generator = generator is not None
         self._engine: Engine | None = None
@@ -72,6 +75,18 @@ class AppServices:
         if self._generator is None:
             self._generator = build_generator(self.settings)
         return self._generator
+
+    @property
+    def scorer(self) -> EntailmentScorer:
+        """The entailment judge; the local one falls back to lexical overlap.
+
+        Construction is lazy and model-free: the local scorer loads its model
+        only on the first claim, and falls back to keyword overlap when it is not
+        present, so this property never downloads anything (SPEC AC8).
+        """
+        if self._scorer is None:
+            self._scorer = LocalEntailmentScorer()
+        return self._scorer
 
     def update_config(
         self,
@@ -137,14 +152,24 @@ def get_generator(services: ServicesDep) -> Generator:
 GeneratorDep = Annotated[Generator, Depends(get_generator)]
 
 
+def get_scorer(services: ServicesDep) -> EntailmentScorer:
+    """The injected or configured entailment scorer, built on first use."""
+    return services.scorer
+
+
+ScorerDep = Annotated[EntailmentScorer, Depends(get_scorer)]
+
+
 __all__ = [
     "AppServices",
     "EmbedderDep",
     "GeneratorDep",
+    "ScorerDep",
     "ServicesDep",
     "SessionDep",
     "get_embedder",
     "get_generator",
+    "get_scorer",
     "get_services",
     "get_session",
 ]

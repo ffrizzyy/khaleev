@@ -15,7 +15,7 @@ Two guarantees live in the schema itself, so no route can forget them:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -136,6 +136,62 @@ class ConfigUpdate(BaseModel):
     generator: GeneratorChoice | None = None
 
 
+class StartEvalRequest(BaseModel):
+    """The optional body of ``POST /api/documents/{id}/evals``.
+
+    ``k`` omitted means "use the server's configured retrieval size" — the
+    default 5 — and the run records whichever ``k`` it actually used, so
+    hit-rate@k stays comparable across runs (Metric definitions, AC10).
+    """
+
+    k: int | None = Field(default=None, ge=1, description="Top-k for this run")
+
+
+class EvalRunEntry(BaseModel):
+    """One golden entry's persisted result inside an eval run (AC5)."""
+
+    golden_index: int = Field(ge=0)
+    hit: bool
+    answer: str
+    claims: int = Field(ge=0)
+    supported_claims: int = Field(ge=0)
+    faithfulness: float = Field(ge=0.0, le=1.0)
+
+
+class EvalRun(BaseModel):
+    """A persisted eval run with its aggregate metrics and recorded config (F5)."""
+
+    id: int
+    document_id: int
+    created_at: datetime
+    k: int = Field(ge=1, description="Top-k used by the run")
+    embedder_id: str = Field(min_length=1)
+    scorer_id: str = Field(min_length=1)
+    hit_rate: float = Field(ge=0.0, le=1.0)
+    faithfulness: float = Field(ge=0.0, le=1.0)
+    config: dict[str, Any] = Field(
+        description="Persisted run configuration, including the golden-set revision"
+    )
+
+
+class EvalRunDetail(EvalRun):
+    """A single run read back with one row per golden entry (AC5)."""
+
+    entries: list[EvalRunEntry]
+
+
+class EvalRunSummary(EvalRun):
+    """A history row: the run plus its comparability flag (AC6, AC10).
+
+    ``flagged`` is computed by the backend from the persisted config only;
+    ``comparable`` is its inverse, both exposed so the dashboard never has to
+    re-derive the rule.
+    """
+
+    comparable: bool
+    flagged: bool
+
+
 __all__ = [
     "AnswerResponse",
     "AppConfig",
@@ -145,8 +201,13 @@ __all__ = [
     "DeleteDocumentResponse",
     "Document",
     "DocumentDetail",
+    "EvalRun",
+    "EvalRunDetail",
+    "EvalRunEntry",
+    "EvalRunSummary",
     "GeneratorChoice",
     "GoldenEntry",
     "GoldenSet",
     "PageText",
+    "StartEvalRequest",
 ]

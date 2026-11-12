@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from khaleev.api.routes import ask, config, documents
+from khaleev.api.routes import ask, config, documents, evals
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(documents.router)
 api_router.include_router(ask.router)
 api_router.include_router(config.router)
+api_router.include_router(evals.router)
 
 __all__ = ["api_router"]
