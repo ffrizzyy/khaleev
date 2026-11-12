@@ -18,6 +18,9 @@ Three contracts live here:
 * **Delete is complete.** Rows go through the schema's ``ON DELETE CASCADE``;
   the files that no foreign key can reach (index, stored PDF, golden-set JSON)
   are removed explicitly (AC11).
+* **The golden set is a file.** Upload seeds an empty golden file so the path
+  always exists, and reading it validates the file, refreshes the derived
+  ``golden_sets`` row and returns the revision eval runs compare against (T13).
 """
 
 from __future__ import annotations
@@ -28,14 +31,12 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from khaleev import paths
 from khaleev.config import Settings
+from khaleev.evals import golden
 from khaleev.ingest.embedding import Embedder
 from khaleev.ingest.pipeline import IngestResult, ingest_pdf, stored_pdf_path
 from khaleev.models import Chunk, Document, GoldenSet
 from khaleev.retrieval.index import VectorIndex
-
-GOLDEN_SUFFIX = ".json"
 
 
 class DocumentNotFoundError(LookupError):
@@ -75,7 +76,7 @@ def upload_document(
     """
     config = _resolve(settings)
     resolved_dir = _resolve_data_dir(data_dir, config)
-    return ingest_pdf(
+    result = ingest_pdf(
         session,
         pdf_bytes,
         filename,
@@ -83,6 +84,10 @@ def upload_document(
         settings=config,
         embedder=embedder,
     )
+    # The golden path must exist for every document, even before the user edits
+    # it, so a revision can always be recorded with an eval run (T13, AC10).
+    golden.seed_golden_file(resolved_dir, result.document.id)
+    return result
 
 
 def list_documents(session: Session) -> list[Document]:
@@ -176,11 +181,30 @@ def page_text(
     return reconstruct_page_text(chunks, settings)
 
 
+def get_golden_set(
+    session: Session,
+    document_id: int,
+    *,
+    data_dir: Path | None = None,
+    settings: Settings | None = None,
+) -> golden.GoldenSet:
+    """Return the document's validated golden set, refreshing its stored row.
+
+    ``GET /api/documents/{id}/golden`` is read-only for the caller: the JSON file
+    is the source of truth, and the ``golden_sets`` row is kept in step with it so
+    later eval runs can record the same revision (AC10). Raises
+    :class:`DocumentNotFoundError` for an unknown document and the golden-set
+    errors from :mod:`khaleev.evals.golden` for a missing, empty or invalid file.
+    """
+    config = _resolve(settings)
+    resolved_dir = _resolve_data_dir(data_dir, config)
+    get_document(session, document_id)
+    return golden.sync_golden_set(session, resolved_dir, document_id)
+
+
 def _golden_file(settings: Settings, document_id: int) -> Path:
     """The canonical golden-set file path for one document (T13 seeds this)."""
-    return paths.DataPaths.from_data_dir(settings.data_dir).golden / (
-        f"{document_id}{GOLDEN_SUFFIX}"
-    )
+    return golden.golden_path(settings.data_dir, document_id)
 
 
 def _is_within(path: Path, root: Path) -> bool:
@@ -203,9 +227,9 @@ def _deletable_files(
         stored_pdf_path(data_dir, document.content_hash),
         _golden_file(settings, document.id),
     ]
-    golden = session.get(GoldenSet, document.id)
-    if golden is not None and golden.path:
-        recorded = Path(golden.path)
+    golden_row = session.get(GoldenSet, document.id)
+    if golden_row is not None and golden_row.path:
+        recorded = Path(golden_row.path)
         # Only trust a recorded path that is inside the data directory.
         if _is_within(recorded, data_dir):
             files.append(recorded)
@@ -244,6 +268,7 @@ __all__ = [
     "PageOutOfRangeError",
     "delete_document",
     "get_document",
+    "get_golden_set",
     "list_documents",
     "page_text",
     "reconstruct_page_text",

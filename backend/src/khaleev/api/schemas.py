@@ -93,6 +93,31 @@ class DeleteDocumentResponse(BaseModel):
     deleted: bool
 
 
+class GoldenEntry(BaseModel):
+    """One curated question, its expected answer and its 1-based source pages."""
+
+    question: str = Field(min_length=1)
+    expected_answer: str = Field(min_length=1)
+    expected_pages: list[int] = Field(min_length=1, description="1-based page numbers")
+
+    @field_validator("question", "expected_answer")
+    @classmethod
+    def _text_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("golden entry text must not be blank")
+        return value
+
+
+class GoldenSet(BaseModel):
+    """A document's golden set as the UI reads it (F4, AC4)."""
+
+    document_id: int
+    revision: str = Field(
+        min_length=1, description="Content hash of the golden-set file, used for comparability"
+    )
+    entries: list[GoldenEntry] = Field(min_length=1)
+
+
 class AppConfig(BaseModel):
     """The settings the UI may read: retrieval size and model choices."""
 
@@ -121,5 +146,7 @@ __all__ = [
     "Document",
     "DocumentDetail",
     "GeneratorChoice",
+    "GoldenEntry",
+    "GoldenSet",
     "PageText",
 ]

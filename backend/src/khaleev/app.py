@@ -13,6 +13,8 @@ no caller ever receives a traceback:
 * ``NotAPdfError`` -> 400 (the upload is not a PDF at all);
 * ``CorruptPdfError`` -> 422 (it is a PDF, but unreadable);
 * ``DocumentNotFoundError`` / ``PageOutOfRangeError`` -> 404;
+* ``GoldenSetNotFoundError`` -> 404 (the document has no golden file) and
+  ``GoldenSetValidationError`` -> 422 (it exists but is empty or invalid);
 * ``NoContextError`` -> 422 (the document has no indexed text to answer from);
 * ``GenerationError`` -> 503 (the generator is unreachable or unconfigured),
   with the actionable message the client came up with.
@@ -29,6 +31,7 @@ from fastapi.responses import JSONResponse
 from khaleev.api.deps import AppServices
 from khaleev.api.routes import api_router
 from khaleev.config import Settings
+from khaleev.evals.golden import GoldenSetNotFoundError, GoldenSetValidationError
 from khaleev.generation import GenerationError, Generator
 from khaleev.ingest.embedding import Embedder
 from khaleev.ingest.pdf import CorruptPdfError, NotAPdfError
@@ -88,6 +91,12 @@ def create_app(
     )
     application.add_exception_handler(
         PageOutOfRangeError, _json_error(status.HTTP_404_NOT_FOUND)
+    )
+    application.add_exception_handler(
+        GoldenSetNotFoundError, _json_error(status.HTTP_404_NOT_FOUND)
+    )
+    application.add_exception_handler(
+        GoldenSetValidationError, _json_error(status.HTTP_422_UNPROCESSABLE_CONTENT)
     )
     application.add_exception_handler(
         NoContextError, _json_error(status.HTTP_422_UNPROCESSABLE_CONTENT)

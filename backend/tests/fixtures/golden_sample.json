@@ -1,0 +1,17 @@
+[
+  {
+    "question": "What penalty applies to late filings?",
+    "expected_answer": "Late filings incur a flat 200 credit penalty per return.",
+    "expected_pages": [4]
+  },
+  {
+    "question": "How long do refunds take to process?",
+    "expected_answer": "Refunds are processed within ten business days.",
+    "expected_pages": [2]
+  },
+  {
+    "question": "What is the deadline for filing an appeal?",
+    "expected_answer": "Appeals must be filed within thirty days of the notice.",
+    "expected_pages": [3]
+  }
+]

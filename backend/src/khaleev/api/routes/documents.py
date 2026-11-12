@@ -19,6 +19,7 @@ from fastapi import APIRouter, File, Response, UploadFile, status
 
 from khaleev.api import schemas
 from khaleev.api.deps import EmbedderDep, ServicesDep, SessionDep
+from khaleev.evals import golden
 from khaleev.models import Document as DocumentRow
 from khaleev.services import documents
 
@@ -45,6 +46,22 @@ def _as_detail(document: DocumentRow) -> schemas.DocumentDetail:
         page_count=document.page_count,
         created_at=document.created_at,
         content_hash=document.content_hash,
+    )
+
+
+def _as_golden_set(golden_set: golden.GoldenSet) -> schemas.GoldenSet:
+    """The read-only golden-set view: id, revision and validated entries."""
+    return schemas.GoldenSet(
+        document_id=golden_set.document_id,
+        revision=golden_set.revision,
+        entries=[
+            schemas.GoldenEntry(
+                question=entry.question,
+                expected_answer=entry.expected_answer,
+                expected_pages=list(entry.expected_pages),
+            )
+            for entry in golden_set.entries
+        ],
     )
 
 
@@ -106,6 +123,23 @@ def get_page_text(
     """One page's extracted text, rebuilt from that page's stored chunks."""
     text = documents.page_text(session, document_id, page_number, services.settings)
     return schemas.PageText(document_id=document_id, page_number=page_number, text=text)
+
+
+@router.get("/{document_id}/golden", response_model=schemas.GoldenSet)
+def get_golden_set(
+    document_id: int,
+    session: SessionDep,
+    services: ServicesDep,
+) -> schemas.GoldenSet:
+    """The document's golden set, read-only (F4, AC4).
+
+    The JSON file is the source of truth. An unknown document is 404, a missing
+    golden file is 404 and a file that breaks the golden-set rules (including the
+    empty set a fresh upload seeds) is 422 — mapped in ``khaleev.app``.
+    """
+    return _as_golden_set(
+        documents.get_golden_set(session, document_id, settings=services.settings)
+    )
 
 
 @router.delete("/{document_id}", response_model=schemas.DeleteDocumentResponse)
