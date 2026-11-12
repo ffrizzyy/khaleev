@@ -1,0 +1,139 @@
+/**
+ * The document library list (F2): title, page count, ingest date, a select
+ * control that makes one document the Q&A target, and a guarded delete.
+ *
+ * Deletion is the only destructive action in the app (it also removes chunks,
+ * the vector index, the golden set and the eval history), so it is never a
+ * single click: the row swaps its Delete button for an inline confirmation,
+ * announced as a labelled group so screen-reader and keyboard users get the
+ * same explicit choice. The row is removed by the parent after the API call
+ * succeeds, so a failed delete leaves the list and the user's place intact.
+ */
+
+import { useState } from "react";
+import type { ReactElement } from "react";
+
+import { isApiError } from "../api/client";
+import type { Document } from "../types";
+
+export interface DocumentListProps {
+  documents: readonly Document[];
+  /** The current Q&A target, highlighted in the list. */
+  selectedDocumentId: number | null;
+  onSelect: (document: Document) => void;
+  /** Resolves once the document is gone; rejects with the API's error. */
+  onDelete: (document: Document) => Promise<void>;
+}
+
+function pagesLabel(pageCount: number): string {
+  return `${pageCount} ${pageCount === 1 ? "page" : "pages"}`;
+}
+
+/** Deterministic UTC date (the API sends ISO-8601); no locale drift in tests. */
+function formatIngestDate(createdAt: string): string {
+  const dateOnly = createdAt.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateOnly) ? dateOnly : createdAt;
+}
+
+function describeFailure(error: unknown, title: string): string {
+  const reason = isApiError(error)
+    ? error.detail
+    : error instanceof Error
+      ? error.message
+      : "Unknown error";
+  return `Could not delete "${title}": ${reason}`;
+}
+
+export function DocumentList({
+  documents,
+  selectedDocumentId,
+  onSelect,
+  onDelete,
+}: DocumentListProps): ReactElement {
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<{ documentId: number; message: string } | null>(
+    null,
+  );
+
+  function startConfirming(document: Document): void {
+    setDeleteError(null);
+    setConfirmingId(document.id);
+  }
+
+  function cancelConfirming(): void {
+    setDeleteError(null);
+    setConfirmingId(null);
+  }
+
+  async function confirmDelete(document: Document): Promise<void> {
+    setDeleteError(null);
+    setDeletingId(document.id);
+    try {
+      await onDelete(document);
+      setConfirmingId(null);
+    } catch (error) {
+      setDeleteError({ documentId: document.id, message: describeFailure(error, document.title) });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  return (
+    <section aria-labelledby="document-list-heading">
+      <h3 id="document-list-heading">Your documents</h3>
+      {documents.length === 0 ? (
+        <p>No documents yet. Upload a PDF to start your library.</p>
+      ) : (
+        <ul>
+          {documents.map((document) => {
+            const isSelected = document.id === selectedDocumentId;
+            const isConfirming = document.id === confirmingId;
+            const isDeleting = document.id === deletingId;
+            return (
+              <li key={document.id} aria-current={isSelected ? "true" : undefined}>
+                <h4>{document.title}</h4>
+                <p>{pagesLabel(document.page_count)}</p>
+                <p>
+                  Ingested{" "}
+                  <time dateTime={document.created_at}>
+                    {formatIngestDate(document.created_at)}
+                  </time>
+                </p>
+                {isSelected ? <p>Selected for Q&amp;A</p> : null}
+                <button type="button" aria-pressed={isSelected} onClick={() => onSelect(document)}>
+                  {isSelected ? `Selected: ${document.title}` : `Select ${document.title}`}
+                </button>
+                {isConfirming ? (
+                  <div role="group" aria-label={`Confirm deletion of ${document.title}`}>
+                    <p>
+                      Delete "{document.title}" and all of its eval history? This cannot be undone.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => void confirmDelete(document)}
+                    >
+                      Confirm delete {document.title}
+                    </button>
+                    <button type="button" disabled={isDeleting} onClick={cancelConfirming}>
+                      Cancel delete {document.title}
+                    </button>
+                    {isDeleting ? <p role="status">Deleting "{document.title}"…</p> : null}
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => startConfirming(document)}>
+                    Delete {document.title}
+                  </button>
+                )}
+                {deleteError?.documentId === document.id ? (
+                  <p role="alert">{deleteError.message}</p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
