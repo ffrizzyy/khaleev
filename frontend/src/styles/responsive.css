@@ -1,0 +1,102 @@
+/**
+ * Responsive layer. Mobile-first: the defaults are the 360px layout, and the
+ * two breakpoints below widen it. Nothing here sets a body height or hides
+ * overflow, so the page always scrolls naturally and never sideways: wide
+ * content reflows, wraps or gets its own contained scroll area instead.
+ */
+
+/* Small screens: 360px --------------------------------------------------- */
+
+@media (max-width: 47.99rem) {
+  .page {
+    gap: var(--space-4);
+  }
+
+  .panel {
+    padding: var(--space-4);
+  }
+
+  .panel--latest {
+    padding-inline: var(--space-4);
+  }
+
+  .doc-item {
+    padding: var(--space-3);
+  }
+
+  .page-viewer {
+    padding: var(--space-4);
+  }
+
+  .metric {
+    padding: var(--space-3);
+  }
+
+  /* Actions take the full row so each one is an easy 44px tap. */
+  .doc-item__actions > .button {
+    flex: 1 1 100%;
+  }
+}
+
+/* Tablet and up: 768px --------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .app-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  .app-nav {
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  .doc-item__actions > .button {
+    flex: 0 1 auto;
+  }
+
+  .confirm > .button {
+    width: auto;
+    justify-self: start;
+  }
+
+  /* The two headline metrics sit side by side once there is room. */
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  /* A citation reads as a reference column beside its supporting quote. */
+  .citation {
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2) var(--space-4);
+  }
+}
+
+/* Desktop and up: 1280px ------------------------------------------------- */
+
+@media (min-width: 80rem) {
+  .app-main {
+    padding-inline: var(--space-5);
+    padding-block-start: var(--space-6);
+  }
+
+  .app-header {
+    padding-inline: var(--space-5);
+  }
+
+  .page {
+    gap: var(--space-6);
+  }
+
+  .panel {
+    padding: var(--space-6);
+  }
+
+  .metrics {
+    gap: var(--space-5);
+  }
+}

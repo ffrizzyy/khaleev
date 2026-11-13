@@ -83,24 +83,39 @@ export function Library(): ReactElement {
   const loading = documents === null && loadError === null;
 
   return (
-    <section aria-labelledby="library-heading">
-      <h2 id="library-heading">Library</h2>
-      <p>Upload a PDF, then pick the one document you want to question.</p>
+    <section className="page" aria-labelledby="library-heading">
+      <header className="page__header">
+        <h2 className="page__title" id="library-heading">
+          Library
+        </h2>
+        <p className="page__lede">Upload a PDF, then pick the one document you want to question.</p>
+      </header>
 
       <Upload existingDocuments={documents ?? []} onUploaded={refresh} />
 
-      <p aria-live="polite">
+      <p
+        className={
+          selectedDocument === null
+            ? "selection-banner"
+            : "selection-banner selection-banner--active"
+        }
+        aria-live="polite"
+      >
         {selectedDocument === null
           ? "No document selected for Q&A yet."
           : `Q&A target: ${selectedDocument.title}`}
       </p>
 
-      {loading ? <p role="status">Loading documents…</p> : null}
+      {loading ? (
+        <p className="status" role="status">
+          Loading documents…
+        </p>
+      ) : null}
 
       {loadError !== null ? (
-        <div role="alert">
-          <p>Could not load the library: {loadError}</p>
-          <button type="button" onClick={retryLoad}>
+        <div className="notice" role="alert">
+          <p className="notice__text">Could not load the library: {loadError}</p>
+          <button className="button" type="button" onClick={retryLoad}>
             Retry loading documents
           </button>
         </div>

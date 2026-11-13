@@ -15,19 +15,27 @@ import { Library } from "./pages/Library";
 /** Shared chrome: product heading, the promise, and primary navigation. */
 function AppLayout() {
   return (
-    <div>
-      <header>
-        <h1>Khaleev</h1>
-        <p>Local-first document Q&amp;A with page-cited answers and evaluation metrics.</p>
-        <nav aria-label="Primary">
-          <NavLink to="/" end>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-header__identity">
+          <h1 className="app-title">Khaleev</h1>
+          <p className="app-tagline">
+            Local-first document Q&amp;A with page-cited answers and evaluation metrics.
+          </p>
+        </div>
+        <nav className="app-nav" aria-label="Primary">
+          <NavLink className="app-nav__link" to="/" end>
             Library
           </NavLink>
-          <NavLink to="/chat">Chat</NavLink>
-          <NavLink to="/evals">Eval dashboard</NavLink>
+          <NavLink className="app-nav__link" to="/chat">
+            Chat
+          </NavLink>
+          <NavLink className="app-nav__link" to="/evals">
+            Eval dashboard
+          </NavLink>
         </nav>
       </header>
-      <main>
+      <main className="app-main">
         <Outlet />
       </main>
     </div>
@@ -37,9 +45,11 @@ function AppLayout() {
 /** The catch-all for unknown addresses. */
 function NotFound() {
   return (
-    <section aria-labelledby="not-found-heading">
-      <h2 id="not-found-heading">Page not found</h2>
-      <p>That address does not exist. Use the navigation above.</p>
+    <section className="page page--not-found" aria-labelledby="not-found-heading">
+      <h2 className="page__title" id="not-found-heading">
+        Page not found
+      </h2>
+      <p className="page__lede">That address does not exist. Use the navigation above.</p>
     </section>
   );
 }

@@ -42,9 +42,13 @@ export function GoldenSetView({
 
   if (loading) {
     return (
-      <section aria-labelledby={headingId}>
-        <h3 id={headingId}>Golden set</h3>
-        <p role="status">Loading the golden set…</p>
+      <section className="panel panel--golden" aria-labelledby={headingId}>
+        <h3 className="panel__title" id={headingId}>
+          Golden set
+        </h3>
+        <p className="status" role="status">
+          Loading the golden set…
+        </p>
       </section>
     );
   }
@@ -55,11 +59,13 @@ export function GoldenSetView({
         ? "The golden-set file is missing. Re-upload the PDF to recreate it, then add at least one valid entry."
         : ADD_ENTRY_GUIDANCE;
     return (
-      <section aria-labelledby={headingId}>
-        <h3 id={headingId}>Golden set</h3>
-        <div role="alert">
-          <p>Could not load the golden set: {error.message}</p>
-          <p>{guidance}</p>
+      <section className="panel panel--golden" aria-labelledby={headingId}>
+        <h3 className="panel__title" id={headingId}>
+          Golden set
+        </h3>
+        <div className="notice" role="alert">
+          <p className="notice__text">Could not load the golden set: {error.message}</p>
+          <p className="notice__text">{guidance}</p>
         </div>
       </section>
     );
@@ -67,31 +73,35 @@ export function GoldenSetView({
 
   if (goldenSet === null) {
     return (
-      <section aria-labelledby={headingId}>
-        <h3 id={headingId}>Golden set</h3>
-        <p>No golden set is available for this document.</p>
+      <section className="panel panel--golden" aria-labelledby={headingId}>
+        <h3 className="panel__title" id={headingId}>
+          Golden set
+        </h3>
+        <p className="empty-state">No golden set is available for this document.</p>
       </section>
     );
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <h3 id={headingId}>Golden set</h3>
-      <p>
+    <section className="panel panel--golden" aria-labelledby={headingId}>
+      <h3 className="panel__title" id={headingId}>
+        Golden set
+      </h3>
+      <p className="panel__text">
         Read-only. This curated set is what every evaluation scores against. Revision{" "}
-        <code>{goldenSet.revision}</code>.
+        <code className="code-inline">{goldenSet.revision}</code>.
       </p>
       {goldenSet.entries.length === 0 ? (
-        <p>No golden entries yet. {ADD_ENTRY_GUIDANCE}</p>
+        <p className="empty-state">No golden entries yet. {ADD_ENTRY_GUIDANCE}</p>
       ) : (
-        <ol>
+        <ol className="golden-list">
           {goldenSet.entries.map((entry, index) => (
-            <li key={index}>
-              <h4>
+            <li className="golden-entry" key={index}>
+              <h4 className="golden-entry__title">
                 Entry {index + 1}: {entry.question}
               </h4>
-              <p>Expected answer: {entry.expected_answer}</p>
-              <p>Expected {pagesLabel(entry.expected_pages)}.</p>
+              <p className="golden-entry__text">Expected answer: {entry.expected_answer}</p>
+              <p className="golden-entry__text">Expected {pagesLabel(entry.expected_pages)}.</p>
             </li>
           ))}
         </ol>

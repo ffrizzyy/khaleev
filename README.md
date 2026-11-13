@@ -18,8 +18,8 @@ a local Ollama model.
   [docs/references/README.md](docs/references/README.md) is the home for future reference material.
 - **Status:** v0.1.0. The v1 feature set in `SPEC.md` is implemented. The database schema is
   created and migrated automatically when the API starts, so a clean `uv sync` plus the documented
-  run command is all a fresh install needs. One quality gap remains under
-  [Known gaps](#known-gaps): the UI has no stylesheet yet.
+  run command is all a fresh install needs. The frontend is styled with hand-written CSS (no CSS
+  framework); see [Frontend styling](#frontend-styling).
 
 ---
 
@@ -38,8 +38,9 @@ a local Ollama model.
 11. [The offline test guarantee](#the-offline-test-guarantee)
 12. [Manual check against a real Ollama instance](#manual-check-against-a-real-ollama-instance)
 13. [Runtime dependencies added](#runtime-dependencies-added)
-14. [Known gaps](#known-gaps)
-15. [API surface](#api-surface)
+14. [Frontend styling](#frontend-styling)
+15. [Known gaps](#known-gaps)
+16. [API surface](#api-surface)
 
 ---
 
@@ -525,29 +526,48 @@ Frontend development-only (`devDependencies`): `vite`, `@vitejs/plugin-react`, `
 `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `globals`, `prettier`, `vitest`,
 `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`.
 
+## Frontend styling
+
+The UI is styled with **hand-written CSS and no CSS framework**: no Tailwind, no component
+library, no CSS-in-JS runtime and no preprocessor, so `frontend/package.json` is untouched by
+styling work.
+
+| File | Role |
+| --- | --- |
+| `frontend/src/styles/tokens.css` | Design tokens: colour, type scale, spacing steps, radius, focus ring. Its header comment records the measured WCAG contrast ratio of every text/background pair used in the UI. |
+| `frontend/src/styles/base.css` | Reset, global typography, the app shell (header, primary navigation, main) and shared controls (buttons, fields, alerts). |
+| `frontend/src/styles/components.css` | Library, Chat, citation chips, page viewer, eval dashboard, run cards and the golden set. |
+| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints. |
+
+All four are imported exactly once, in `frontend/src/main.tsx`; no component imports CSS of its
+own, and Vite emits them as a single stylesheet at build time. Highlights:
+
+- One light theme and one accent colour. Body text measures 15.9:1 on the page canvas and secondary
+  text at least 6.6:1 on the surfaces it is used on (WCAG 2.1 AA requires 4.5:1 for body text).
+- A visible `:focus-visible` ring (3px, 2px offset) on every link, button, form control and the page
+  viewer; no rule in the stylesheet sets `outline: none`.
+- Citation chips stay real `<button>`s and read as discrete page references; the two eval metrics
+  are set in monospace at the top of the type scale.
+- A flagged (non-comparable) run is marked by a thicker rule, a bordered block and the words
+  "Not comparable", not by colour alone.
+- Tap targets are at least 44px tall, and no page scrolls horizontally at 360px, 768px or 1280px.
+
 ## Known gaps
 
-One open quality gap. The two backend defects a live run of v0.1.0 exposed — the app not applying
-migrations on startup, and `uvicorn` being undeclared — are fixed; see
-[Zero-key local setup](#zero-key-local-setup) and the dependency table above.
-
-1. **The frontend has no stylesheet, so the UI renders as unstyled HTML.** `frontend/src/main.tsx`
-   imports no CSS file, and the repository contains no `.css`, `.scss` or `.less` file. The only
-   styling anywhere is two inline `style` objects in `frontend/src/components/PageViewer.tsx` (the
-   dialog border/padding and `white-space: pre-wrap` for page text).
-   *Symptom:* the app is readable and fully functional, but has no layout, typography, spacing or
-   visual hierarchy — it looks like a bare HTML document.
-   *Workaround:* none in v0.1.0; use the app as it is.
-   *Status:* open. Styling is scheduled for task **T21** (hand-written CSS, no new dependency).
+No open defects in the v1 scope. The two backend defects a live run of v0.1.0 exposed — the app not
+applying migrations on startup, and `uvicorn` being undeclared — are fixed; see
+[Zero-key local setup](#zero-key-local-setup) and the dependency table above. The third gap, the
+missing frontend stylesheet, is fixed as well: the UI is styled by the hand-written CSS described
+in [Frontend styling](#frontend-styling).
 
 Not a defect, but worth knowing: the API serves `/api` only. `backend/src/khaleev/app.py` has no
 static-file mount for `frontend/dist/` and no CORS middleware. That matches the SPEC's development
 model ("`vite dev` proxies to the API"), which is the supported path; `npm run build` output is
 simply not served by uvicorn.
 
-Beyond that styling gap, the v1 scope is complete: upload, per-page extraction and chunking,
-local embeddings and FAISS retrieval, cited answers, golden sets, both metrics, eval persistence and
-the dashboard with comparability flags all work and are covered by the offline test suites.
+The v1 scope is complete: upload, per-page extraction and chunking, local embeddings and FAISS
+retrieval, cited answers, golden sets, both metrics, eval persistence and the dashboard with
+comparability flags all work and are covered by the offline test suites.
 
 ## API surface
 

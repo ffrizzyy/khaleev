@@ -95,7 +95,11 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
 
   function renderOutcome(): ReactElement | null {
     if (state.kind === "failed") {
-      return <p role="alert">{state.message}</p>;
+      return (
+        <p className="alert" role="alert">
+          {state.message}
+        </p>
+      );
     }
     if (state.kind !== "answered") {
       return null;
@@ -104,7 +108,7 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
 
     if (response.answer.trim().length === 0) {
       return (
-        <p role="alert">
+        <p className="alert" role="alert">
           The generator returned an empty answer. Try rephrasing the question, or check that the
           generator is running.
         </p>
@@ -113,7 +117,7 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
 
     if (response.citations.length === 0) {
       return (
-        <p role="alert">
+        <p className="alert" role="alert">
           This answer has no page citations, so it cannot be trusted. Ask again, or delete and
           re-upload the document so its pages are indexed.
         </p>
@@ -121,10 +125,12 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
     }
 
     return (
-      <section aria-labelledby={answerHeadingId}>
-        <h4 id={answerHeadingId}>Answer</h4>
-        <p>Question: {state.question}</p>
-        <p>{response.answer}</p>
+      <section className="answer" aria-labelledby={answerHeadingId}>
+        <h4 className="answer__heading" id={answerHeadingId}>
+          Answer
+        </h4>
+        <p className="answer__question">Question: {state.question}</p>
+        <p className="answer__body">{response.answer}</p>
         <CitationList
           citations={response.citations}
           onOpenPage={onOpenPage}
@@ -135,11 +141,16 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
   }
 
   return (
-    <section aria-labelledby={`${inputId}-heading`} aria-busy={asking}>
-      <h3 id={`${inputId}-heading`}>Ask a question</h3>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor={inputId}>Question</label>
+    <section className="panel panel--ask" aria-labelledby={`${inputId}-heading`} aria-busy={asking}>
+      <h3 className="panel__title" id={`${inputId}-heading`}>
+        Ask a question
+      </h3>
+      <form className="ask-form" onSubmit={handleSubmit}>
+        <label className="field__label" htmlFor={inputId}>
+          Question
+        </label>
         <input
+          className="field__text"
           id={inputId}
           type="text"
           value={question}
@@ -147,15 +158,19 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
           aria-describedby={hintId}
           onChange={(event) => setQuestion(event.currentTarget.value)}
         />
-        <p id={hintId}>
+        <p className="field__hint" id={hintId}>
           The answer uses only page-attributed text from this document, and every answer cites its
           source pages.
         </p>
-        <button type="submit" disabled={asking}>
+        <button className="button button--primary" type="submit" disabled={asking}>
           Ask
         </button>
       </form>
-      {asking ? <p role="status">Asking the selected document…</p> : null}
+      {asking ? (
+        <p className="status" role="status">
+          Asking the selected document…
+        </p>
+      ) : null}
       {renderOutcome()}
     </section>
   );

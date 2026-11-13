@@ -1,0 +1,363 @@
+/**
+ * Base layer: reset, global typography, the app shell and shared controls.
+ *
+ * The shell is a normal document flow: no fixed height and no `100vh`, so the
+ * page scrolls naturally and the header is never trapped in a viewport box.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}
+
+/* Headings come from the shared type scale; levels are unchanged (h1–h5). */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: var(--text-2xl);
+}
+
+h3 {
+  font-size: var(--text-xl);
+}
+
+h4 {
+  font-size: var(--text-lg);
+}
+
+h5 {
+  font-size: var(--text-md);
+  letter-spacing: 0;
+}
+
+p,
+ul,
+ol,
+dl,
+dt,
+dd,
+blockquote,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding-left: 0;
+}
+
+time {
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+strong {
+  font-weight: 600;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--color-accent-strong);
+  text-decoration-thickness: 2px;
+}
+
+/*
+ * One focus treatment for every interactive element, including the page viewer
+ * (`[tabindex]`), which takes focus programmatically when it opens. There is no
+ * `outline: none` anywhere in this stylesheet.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* App shell -------------------------------------------------------------- */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--space-5) var(--space-8);
+}
+
+.app-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+  padding-block-end: var(--space-5);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.app-header__identity {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.app-title {
+  font-size: var(--text-3xl);
+}
+
+.app-tagline {
+  max-width: var(--measure);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.app-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding-inline: var(--space-3);
+  border-block-end: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-nav__link:hover {
+  background-color: var(--color-surface-muted);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+/*
+ * The current route is cued by three things, not hue alone: the accent text,
+ * the 2px underline, and the tinted background.
+ */
+.app-nav__link[aria-current="page"] {
+  border-block-end-color: var(--color-accent);
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.app-main {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+  padding-block-start: var(--space-5);
+}
+
+/* Shared controls -------------------------------------------------------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--color-surface-muted);
+}
+
+.button:disabled {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.button--primary {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.button--primary:hover:not(:disabled) {
+  border-color: var(--color-accent-strong);
+  background-color: var(--color-accent-strong);
+}
+
+.button--primary:disabled {
+  border-color: var(--color-accent-strong);
+  background-color: var(--color-accent-strong);
+  color: var(--color-on-accent);
+}
+
+.button--danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.button--danger:hover:not(:disabled) {
+  background-color: var(--color-danger);
+  color: var(--color-surface);
+}
+
+.field__label {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field__text,
+.field__number,
+.field__file {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.field__number {
+  max-width: 7rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.field__file {
+  font-size: var(--text-sm);
+  background-color: var(--color-surface-muted);
+  border-style: dashed;
+  cursor: pointer;
+}
+
+.field__file::file-selector-button {
+  min-height: 2rem;
+  margin-inline-end: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.field__hint {
+  max-width: var(--measure);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Feedback --------------------------------------------------------------- */
+
+.status {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.status--error {
+  color: var(--color-danger);
+}
+
+.status--success {
+  color: var(--color-accent);
+}
+
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.notice {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.notice__text {
+  font-size: var(--text-sm);
+}
+
+.empty-state {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Motion: only when the reader has not asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .button,
+  .app-nav__link,
+  .citation__chip,
+  a {
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast);
+  }
+}

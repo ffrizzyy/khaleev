@@ -45,14 +45,20 @@ export function Chat(): ReactElement {
 
   if (selected === null) {
     return (
-      <section aria-labelledby="chat-heading">
-        <h2 id="chat-heading">Chat</h2>
-        <p>
+      <section className="page" aria-labelledby="chat-heading">
+        <header className="page__header">
+          <h2 className="page__title" id="chat-heading">
+            Chat
+          </h2>
+        </header>
+        <p className="page__lede">
           No document selected yet. Open the Library, pick the document you want to question, then
           come back here to ask about it.
         </p>
-        <p>
-          <Link to="/">Go to the Library to pick a document</Link>
+        <p className="page__action">
+          <Link className="text-link" to="/">
+            Go to the Library to pick a document
+          </Link>
         </p>
       </section>
     );
@@ -62,14 +68,18 @@ export function Chat(): ReactElement {
     openPage !== null && openPage.documentId === selected.id ? openPage.page : null;
 
   return (
-    <section aria-labelledby="chat-heading">
-      <h2 id="chat-heading">Chat</h2>
-      <header>
-        <h3>Questioning {selected.title}</h3>
-        <p>
+    <section className="page" aria-labelledby="chat-heading">
+      <header className="page__header">
+        <h2 className="page__title" id="chat-heading">
+          Chat
+        </h2>
+      </header>
+      <header className="chat-context">
+        <h3 className="chat-context__title">Questioning {selected.title}</h3>
+        <p className="chat-context__meta">
           {selected.page_count} {selected.page_count === 1 ? "page" : "pages"}
         </p>
-        <p>
+        <p className="chat-context__lede">
           Answers cite the pages they were drawn from, and selecting a citation opens that page
           below.
         </p>

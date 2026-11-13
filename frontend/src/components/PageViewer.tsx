@@ -115,39 +115,45 @@ export function PageViewer({
   let body: ReactElement;
   if (!valid) {
     body = (
-      <p role="alert">
+      <p className="alert" role="alert">
         Page {pageNumber} is outside this document&apos;s 1–{pageCount} page range, so it cannot be
         shown. Pick one of the cited pages instead.
       </p>
     );
   } else if (shownFailure !== null) {
     body = (
-      <p role="alert">
+      <p className="alert" role="alert">
         Could not load page {pageNumber}: {shownFailure}
       </p>
     );
   } else if (shownPage !== null) {
     body = (
-      <div>
-        <p>Extracted text for page {pageNumber}:</p>
-        <p style={{ whiteSpace: "pre-wrap" }}>{shownPage.text}</p>
+      <div className="page-viewer__body">
+        <p className="page-viewer__label">Extracted text for page {pageNumber}:</p>
+        <p className="page-viewer__text">{shownPage.text}</p>
       </div>
     );
   } else {
-    body = <p role="status">Loading page {pageNumber}…</p>;
+    body = (
+      <p className="status" role="status">
+        Loading page {pageNumber}…
+      </p>
+    );
   }
 
   return (
     <section
       ref={dialogRef}
+      className="page-viewer"
       role="dialog"
       aria-labelledby={headingId}
       tabIndex={-1}
-      style={{ border: "1px solid currentColor", padding: "1rem", marginTop: "1rem" }}
     >
-      <h3 id={headingId}>Page {pageNumber}</h3>
+      <h3 className="page-viewer__title" id={headingId}>
+        Page {pageNumber}
+      </h3>
       {body}
-      <button type="button" onClick={onDismiss}>
+      <button className="button" type="button" onClick={onDismiss}>
         Close page viewer
       </button>
     </section>

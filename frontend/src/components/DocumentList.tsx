@@ -80,54 +80,92 @@ export function DocumentList({
   }
 
   return (
-    <section aria-labelledby="document-list-heading">
-      <h3 id="document-list-heading">Your documents</h3>
+    <section className="panel" aria-labelledby="document-list-heading">
+      <h3 className="panel__title" id="document-list-heading">
+        Your documents
+      </h3>
       {documents.length === 0 ? (
-        <p>No documents yet. Upload a PDF to start your library.</p>
+        <p className="empty-state">No documents yet. Upload a PDF to start your library.</p>
       ) : (
-        <ul>
+        <ul className="doc-list">
           {documents.map((document) => {
             const isSelected = document.id === selectedDocumentId;
             const isConfirming = document.id === confirmingId;
             const isDeleting = document.id === deletingId;
             return (
-              <li key={document.id} aria-current={isSelected ? "true" : undefined}>
-                <h4>{document.title}</h4>
-                <p>{pagesLabel(document.page_count)}</p>
-                <p>
-                  Ingested{" "}
-                  <time dateTime={document.created_at}>
-                    {formatIngestDate(document.created_at)}
-                  </time>
-                </p>
-                {isSelected ? <p>Selected for Q&amp;A</p> : null}
-                <button type="button" aria-pressed={isSelected} onClick={() => onSelect(document)}>
-                  {isSelected ? `Selected: ${document.title}` : `Select ${document.title}`}
-                </button>
-                {isConfirming ? (
-                  <div role="group" aria-label={`Confirm deletion of ${document.title}`}>
-                    <p>
-                      Delete "{document.title}" and all of its eval history? This cannot be undone.
+              <li
+                className="doc-item"
+                key={document.id}
+                aria-current={isSelected ? "true" : undefined}
+              >
+                <div className="doc-item__body">
+                  <h4 className="doc-item__title">{document.title}</h4>
+                  <div className="doc-item__meta-row">
+                    <p className="doc-item__meta">{pagesLabel(document.page_count)}</p>
+                    <p className="doc-item__meta">
+                      Ingested{" "}
+                      <time dateTime={document.created_at}>
+                        {formatIngestDate(document.created_at)}
+                      </time>
                     </p>
-                    <button
-                      type="button"
-                      disabled={isDeleting}
-                      onClick={() => void confirmDelete(document)}
-                    >
-                      Confirm delete {document.title}
-                    </button>
-                    <button type="button" disabled={isDeleting} onClick={cancelConfirming}>
-                      Cancel delete {document.title}
-                    </button>
-                    {isDeleting ? <p role="status">Deleting "{document.title}"…</p> : null}
                   </div>
-                ) : (
-                  <button type="button" onClick={() => startConfirming(document)}>
-                    Delete {document.title}
+                  {isSelected ? <p className="doc-item__badge">Selected for Q&amp;A</p> : null}
+                </div>
+                <div className="doc-item__actions">
+                  <button
+                    className="button"
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onSelect(document)}
+                  >
+                    {isSelected ? `Selected: ${document.title}` : `Select ${document.title}`}
                   </button>
-                )}
+                  {isConfirming ? (
+                    <div
+                      className="confirm"
+                      role="group"
+                      aria-label={`Confirm deletion of ${document.title}`}
+                    >
+                      <p className="confirm__text">
+                        Delete "{document.title}" and all of its eval history? This cannot be
+                        undone.
+                      </p>
+                      <button
+                        className="button button--danger"
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={() => void confirmDelete(document)}
+                      >
+                        Confirm delete {document.title}
+                      </button>
+                      <button
+                        className="button"
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={cancelConfirming}
+                      >
+                        Cancel delete {document.title}
+                      </button>
+                      {isDeleting ? (
+                        <p className="status" role="status">
+                          Deleting "{document.title}"…
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={() => startConfirming(document)}
+                    >
+                      Delete {document.title}
+                    </button>
+                  )}
+                </div>
                 {deleteError?.documentId === document.id ? (
-                  <p role="alert">{deleteError.message}</p>
+                  <p className="alert" role="alert">
+                    {deleteError.message}
+                  </p>
                 ) : null}
               </li>
             );

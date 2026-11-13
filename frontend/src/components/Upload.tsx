@@ -105,10 +105,19 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
   }
 
   return (
-    <section aria-labelledby={`${inputId}-heading`} aria-busy={uploading}>
-      <h3 id={`${inputId}-heading`}>Upload a PDF</h3>
-      <label htmlFor={inputId}>Upload PDF</label>
+    <section
+      className="panel panel--upload"
+      aria-labelledby={`${inputId}-heading`}
+      aria-busy={uploading}
+    >
+      <h3 className="panel__title" id={`${inputId}-heading`}>
+        Upload a PDF
+      </h3>
+      <label className="field__label" htmlFor={inputId}>
+        Upload PDF
+      </label>
       <input
+        className="field__file"
         id={inputId}
         type="file"
         accept="application/pdf,.pdf"
@@ -116,9 +125,16 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
         disabled={uploading}
         onChange={handleChange}
       />
-      <p id={descriptionId}>Pick a PDF from your machine. It is stored locally.</p>
+      <p className="field__hint" id={descriptionId}>
+        Pick a PDF from your machine. It is stored locally.
+      </p>
       {status.kind !== "idle" ? (
-        <p role={status.kind === "error" ? "alert" : "status"}>{statusMessage(status)}</p>
+        <p
+          className={status.kind === "error" ? "status status--error" : "status status--success"}
+          role={status.kind === "error" ? "alert" : "status"}
+        >
+          {statusMessage(status)}
+        </p>
       ) : null}
     </section>
   );

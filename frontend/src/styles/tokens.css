@@ -1,0 +1,115 @@
+/**
+ * Khaleev design tokens (T21).
+ *
+ * One light theme, one accent. Every value below is hand-written and used by
+ * `base.css`, `components.css` and `responsive.css`; no framework, no
+ * preprocessor, no runtime.
+ *
+ * Contrast pairs used in the UI
+ * -----------------------------
+ * Measured against the WCAG 2.1 relative-luminance formula (computed from the
+ * exact values below; text requires 4.5:1, non-text UI boundaries 3:1).
+ *
+ * Body and heading text
+ *   --color-text (#1b1a18) on --color-canvas (#f6f5f1) .......... 15.94:1
+ *   --color-text (#1b1a18) on --color-surface (#ffffff) ......... 17.39:1
+ *   --color-text (#1b1a18) on --color-surface-muted (#f1efea) ... 15.13:1
+ *   --color-text (#1b1a18) on --color-accent-soft (#e8eef7) ..... 14.91:1
+ *
+ * Secondary text (captions, hints, metadata)
+ *   --color-text-muted (#57534b) on --color-canvas (#f6f5f1) ....  7.01:1
+ *   --color-text-muted (#57534b) on --color-surface (#ffffff) ...  7.65:1
+ *   --color-text-muted (#57534b) on --color-surface-muted .......  6.66:1
+ *
+ * Accent (links, active navigation, selected controls)
+ *   --color-accent (#1d4e89) on --color-surface (#ffffff) .......  8.39:1
+ *   --color-accent (#1d4e89) on --color-canvas (#f6f5f1) ........  7.69:1
+ *   --color-accent (#1d4e89) on --color-accent-soft (#e8eef7) ...  7.19:1
+ *   --color-on-accent (#ffffff) on --color-accent (#1d4e89) .....  8.39:1
+ *   --color-on-accent (#ffffff) on --color-accent-strong (#163c6b) 11.09:1
+ *
+ * Errors, warnings and flagged (non-comparable) runs
+ *   --color-danger (#8a1c1c) on --color-danger-soft (#fbecec) ...  8.09:1
+ *   --color-danger (#8a1c1c) on --color-surface (#ffffff) .......  9.28:1
+ *   --color-danger (#8a1c1c) on --color-canvas (#f6f5f1) ........  8.50:1
+ *
+ * Non-text boundaries (form controls, chips, focus ring)
+ *   --color-border-strong (#8f887a) on --color-surface ...........  3.52:1
+ *   --color-border-strong (#8f887a) on --color-canvas ............  3.22:1
+ *   --color-focus (#1d4e89) on --color-canvas (#f6f5f1) .........  7.69:1
+ *
+ * --color-border (#d8d4cb) is a decorative hairline only (1.48:1 on white);
+ * it is never used as the only boundary of an interactive control.
+ */
+
+:root {
+  /* The UI is light-only by design; keep native controls (file picker, number
+     spinner, scrollbars) on the light palette even when the OS prefers dark. */
+  color-scheme: light;
+
+  /* Colour ---------------------------------------------------------------- */
+  --color-canvas: #f6f5f1;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1efea;
+  --color-text: #1b1a18;
+  --color-text-muted: #57534b;
+  --color-accent: #1d4e89;
+  --color-accent-strong: #163c6b;
+  --color-accent-soft: #e8eef7;
+  --color-on-accent: #ffffff;
+  --color-danger: #8a1c1c;
+  --color-danger-soft: #fbecec;
+  --color-border: #d8d4cb;
+  --color-border-strong: #8f887a;
+  --color-focus: #1d4e89;
+
+  /* Type ------------------------------------------------------------------ */
+  /* System stacks only: no font package, nothing downloaded at runtime. */
+  --font-sans:
+    "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+  --text-xs: 0.75rem; /* 12px: badges, metadata */
+  --text-sm: 0.875rem; /* 14px: captions, hints */
+  --text-md: 1rem; /* 16px: body */
+  --text-lg: 1.125rem; /* 18px: answer body, card titles */
+  --text-xl: 1.375rem; /* 22px: section headings */
+  --text-2xl: 1.75rem; /* 28px: page headings */
+  --text-3xl: 2.125rem; /* 34px: product heading */
+  /* Metric values are the product's differentiator: large, monospace, and
+     never narrower than 24px so they stay legible at 360px. */
+  --text-metric: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem);
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+
+  --measure: 68ch;
+
+  /* Spacing rhythm: a single 4px-derived step set, used everywhere -------- */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.5rem; /* 24px */
+  --space-6: 2rem; /* 32px */
+  --space-7: 3rem; /* 48px */
+  --space-8: 4rem; /* 64px */
+
+  /* Radius ---------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Focus ring: always visible, never removed without a replacement. ------ */
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
+  /* Layout ---------------------------------------------------------------- */
+  --content-max: 72rem;
+  --tap-target: 2.75rem; /* 44px minimum interactive height */
+
+  /* Motion: one 120ms colour fade, only when motion is welcome. ----------- */
+  --transition-fast: 120ms ease-out;
+}

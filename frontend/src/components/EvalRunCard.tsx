@@ -112,41 +112,47 @@ export function EvalRunCard({
   }
 
   return (
-    <article aria-labelledby={titleId}>
-      <header>
-        <h4 id={titleId}>Run #{run.id}</h4>
-        <p>
+    <article
+      className={run.flagged ? "run-card run-card--flagged" : "run-card"}
+      aria-labelledby={titleId}
+    >
+      <header className="run-card__header">
+        <h4 className="run-card__title" id={titleId}>
+          Run #{run.id}
+        </h4>
+        <p className="run-card__meta">
           Started <time dateTime={run.created_at}>{formatRunTimestamp(run.created_at)}</time>
         </p>
-        <p>k = {run.k}</p>
+        <p className="run-card__meta">k = {run.k}</p>
       </header>
 
-      <dl>
-        <div>
-          <dt>Retrieval hit rate @ k={run.k}</dt>
-          <dd>{formatMetric(run.hit_rate)}</dd>
+      <dl className="metrics metrics--compact">
+        <div className="metric">
+          <dt className="metric__label">Retrieval hit rate @ k={run.k}</dt>
+          <dd className="metric__value">{formatMetric(run.hit_rate)}</dd>
         </div>
-        <div>
-          <dt>Answer faithfulness</dt>
-          <dd>{formatMetric(run.faithfulness)}</dd>
+        <div className="metric">
+          <dt className="metric__label">Answer faithfulness</dt>
+          <dd className="metric__value">{formatMetric(run.faithfulness)}</dd>
         </div>
       </dl>
 
       {run.flagged ? (
-        <div>
+        <div className="comparable comparable--flagged">
           <p>
             <strong>Not comparable</strong>
           </p>
           <p>{describeDifferences(run, latest)}</p>
         </div>
       ) : (
-        <p>
+        <p className="comparable">
           <strong>Comparable</strong> — this run shares k, embedder, scorer and golden-set revision
           with the latest run.
         </p>
       )}
 
       <button
+        className="button"
         type="button"
         aria-expanded={expanded}
         aria-controls={detailId}
@@ -158,30 +164,38 @@ export function EvalRunCard({
       </button>
 
       {expanded ? (
-        <div id={detailId}>
-          {loadingDetail ? <p role="status">Loading per-entry results for run {run.id}…</p> : null}
-          {detailError !== null ? <p role="alert">{detailError}</p> : null}
+        <div className="run-card__detail" id={detailId}>
+          {loadingDetail ? (
+            <p className="status" role="status">
+              Loading per-entry results for run {run.id}…
+            </p>
+          ) : null}
+          {detailError !== null ? (
+            <p className="alert" role="alert">
+              {detailError}
+            </p>
+          ) : null}
           {detail !== null ? (
-            <section aria-label={`Per-entry results for run ${run.id}`}>
+            <section className="entries" aria-label={`Per-entry results for run ${run.id}`}>
               {detail.entries.length === 0 ? (
-                <p>This run has no per-entry results.</p>
+                <p className="empty-state">This run has no per-entry results.</p>
               ) : (
-                <ul>
+                <ul className="entries__list">
                   {detail.entries.map((entry) => (
-                    <li key={entry.golden_index}>
-                      <h5>Golden index {entry.golden_index}</h5>
-                      <p>
+                    <li className="entry" key={entry.golden_index}>
+                      <h5 className="entry__title">Golden index {entry.golden_index}</h5>
+                      <p className="entry__meta">
                         <strong>{entry.hit ? "Hit" : "Miss"}</strong> —{" "}
                         {entry.hit
                           ? "at least one retrieved chunk was on an expected page"
                           : "no retrieved chunk was on an expected page"}{" "}
                         at k={detail.k}.
                       </p>
-                      <p>
+                      <p className="entry__meta">
                         Claims: {entry.claims}; supported claims: {entry.supported_claims};
                         per-entry faithfulness: {formatMetric(entry.faithfulness)}.
                       </p>
-                      <blockquote>
+                      <blockquote className="entry__quote">
                         <p>{entry.answer}</p>
                       </blockquote>
                     </li>

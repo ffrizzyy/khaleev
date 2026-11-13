@@ -37,13 +37,18 @@ export function CitationList({
   }
 
   return (
-    <section aria-labelledby={headingId}>
-      <h4 id={headingId}>Citations</h4>
-      <p>Each page below was in the retrieved context. Select one to read that page.</p>
-      <ul>
+    <section className="citations" aria-labelledby={headingId}>
+      <h4 className="citations__heading" id={headingId}>
+        Citations
+      </h4>
+      <p className="citations__hint">
+        Each page below was in the retrieved context. Select one to read that page.
+      </p>
+      <ul className="citations__list">
         {citations.map((citation, index) => (
-          <li key={`${citation.page}-${index}`}>
+          <li className="citation" key={`${citation.page}-${index}`}>
             <button
+              className="citation__chip"
               type="button"
               aria-pressed={citation.page === activePage}
               onClick={() => onOpenPage(citation.page)}
@@ -51,7 +56,7 @@ export function CitationList({
               Page {citation.page}
             </button>
             {citation.quote.trim().length > 0 ? (
-              <blockquote>
+              <blockquote className="citation__quote">
                 <p>{citation.quote}</p>
               </blockquote>
             ) : null}

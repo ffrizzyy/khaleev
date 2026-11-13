@@ -80,14 +80,18 @@ function newestFirst(runs: readonly EvalRunSummary[]): EvalRunSummary[] {
 
 function NoDocument(): ReactElement {
   return (
-    <section aria-labelledby="no-document-heading">
-      <h3 id="no-document-heading">No document selected</h3>
-      <p>
+    <section className="panel" aria-labelledby="no-document-heading">
+      <h3 className="panel__title" id="no-document-heading">
+        No document selected
+      </h3>
+      <p className="panel__text">
         Add an entry to a document&apos;s golden set and run an evaluation from here. First pick the
         document you want to evaluate.
       </p>
-      <p>
-        <Link to="/">Go to the Library to pick a document</Link>
+      <p className="page__action">
+        <Link className="text-link" to="/">
+          Go to the Library to pick a document
+        </Link>
       </p>
     </section>
   );
@@ -196,13 +200,18 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
 
   return (
     <>
-      <p>Evaluating {document.title}.</p>
+      <p className="eval-subject">Evaluating {document.title}.</p>
 
-      <section aria-labelledby="run-eval-heading" aria-busy={running}>
-        <h3 id="run-eval-heading">Run an evaluation</h3>
-        <form onSubmit={(event) => void runEvaluation(event)}>
-          <label htmlFor={kInputId}>k</label>
+      <section className="panel panel--run" aria-labelledby="run-eval-heading" aria-busy={running}>
+        <h3 className="panel__title" id="run-eval-heading">
+          Run an evaluation
+        </h3>
+        <form className="run-form" onSubmit={(event) => void runEvaluation(event)}>
+          <label className="field__label" htmlFor={kInputId}>
+            k
+          </label>
           <input
+            className="field__number"
             id={kInputId}
             type="number"
             min={1}
@@ -213,33 +222,47 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
             aria-describedby={kHintId}
             onChange={(event) => setKInput(event.currentTarget.value)}
           />
-          <p id={kHintId}>
+          <p className="field__hint" id={kHintId}>
             k is the number of retrieved chunks per question. The run records the k it used, so hit
             rates are only comparable at the same k.
           </p>
-          <button type="submit" disabled={running}>
+          <button className="button button--primary" type="submit" disabled={running}>
             Run evaluation
           </button>
         </form>
-        {running ? <p role="status">Running the evaluation…</p> : null}
-        {runError !== null ? <p role="alert">{runError}</p> : null}
+        {running ? (
+          <p className="status" role="status">
+            Running the evaluation…
+          </p>
+        ) : null}
+        {runError !== null ? (
+          <p className="alert" role="alert">
+            {runError}
+          </p>
+        ) : null}
       </section>
 
       {historyError !== null ? (
-        <div role="alert">
-          <p>Could not load the evaluation history: {historyError}</p>
-          <button type="button" onClick={retryLoad}>
+        <div className="notice" role="alert">
+          <p className="notice__text">Could not load the evaluation history: {historyError}</p>
+          <button className="button" type="button" onClick={retryLoad}>
             Retry loading the eval dashboard
           </button>
         </div>
       ) : null}
 
-      {loadingHistory ? <p role="status">Loading evaluation history…</p> : null}
+      {loadingHistory ? (
+        <p className="status" role="status">
+          Loading evaluation history…
+        </p>
+      ) : null}
 
       {history !== null && history.length === 0 ? (
-        <section aria-labelledby="no-runs-heading">
-          <h3 id="no-runs-heading">No evaluation runs yet</h3>
-          <p>
+        <section className="panel panel--empty" aria-labelledby="no-runs-heading">
+          <h3 className="panel__title" id="no-runs-heading">
+            No evaluation runs yet
+          </h3>
+          <p className="panel__text">
             To get a first run, add at least one entry to this document&apos;s golden-set JSON file
             (question, expected answer and at least one expected page), choose k above, then select
             Run evaluation.
@@ -248,21 +271,23 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
       ) : null}
 
       {latest !== null ? (
-        <section aria-labelledby="latest-run-heading">
-          <h3 id="latest-run-heading">Latest run</h3>
-          <p>
+        <section className="panel panel--latest" aria-labelledby="latest-run-heading">
+          <h3 className="panel__title" id="latest-run-heading">
+            Latest run
+          </h3>
+          <p className="latest-run__meta">
             Run #{latest.id}, started{" "}
             <time dateTime={latest.created_at}>{formatRunTimestamp(latest.created_at)}</time>. These
             are the numbers every history row is compared with.
           </p>
-          <dl>
-            <div>
-              <dt>Retrieval hit rate @ k={latest.k}</dt>
-              <dd>{formatMetric(latest.hit_rate)}</dd>
+          <dl className="metrics">
+            <div className="metric">
+              <dt className="metric__label">Retrieval hit rate @ k={latest.k}</dt>
+              <dd className="metric__value">{formatMetric(latest.hit_rate)}</dd>
             </div>
-            <div>
-              <dt>Answer faithfulness</dt>
-              <dd>{formatMetric(latest.faithfulness)}</dd>
+            <div className="metric">
+              <dt className="metric__label">Answer faithfulness</dt>
+              <dd className="metric__value">{formatMetric(latest.faithfulness)}</dd>
             </div>
           </dl>
         </section>
@@ -283,9 +308,15 @@ export function EvalDashboard(): ReactElement {
   const selected = useSelectedDocument();
 
   return (
-    <section aria-labelledby="evals-heading">
-      <h2 id="evals-heading">Eval dashboard</h2>
-      <p>Retrieval hit rate and answer faithfulness for each eval run, with history across runs.</p>
+    <section className="page" aria-labelledby="evals-heading">
+      <header className="page__header">
+        <h2 className="page__title" id="evals-heading">
+          Eval dashboard
+        </h2>
+        <p className="page__lede">
+          Retrieval hit rate and answer faithfulness for each eval run, with history across runs.
+        </p>
+      </header>
       {selected === null ? (
         <NoDocument />
       ) : (
