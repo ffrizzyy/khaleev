@@ -8,7 +8,62 @@ The user is a single technical person running the app entirely on their own mach
 
 ## References
 
-No external references were supplied. The only source of truth is the verbatim user statement: "Document Q&A with citations: Upload PDFs, ask questions, get answers with source page references. Add evaluation (retrieval hit rate, answer faithfulness) to stand out. called Khaleev" (R/U), refined by one interview round whose answers are recorded in `## Locked intent` (U). `docs/references/` exists at the project root for future references; it is currently empty. No reference entries are invented.
+No external references were supplied for the product idea itself. The only source of truth for the product is the verbatim user statement: "Document Q&A with citations: Upload PDFs, ask questions, get answers with source page references. Add evaluation (retrieval hit rate, answer faithfulness) to stand out. called Khaleev" (R/U), refined by one interview round whose answers are recorded in `## Locked intent` (U). `docs/references/` exists at the project root for future references; it is currently empty. No reference entries are invented.
+
+Two **visual** references were supplied later (2026-11-13) and are recorded below; they affect presentation only, not the product requirements above.
+
+| ID | Source | What it establishes | Access date |
+|---|---|---|---|
+| R1 | User attachment "image-2.png" (dashboard layout mockup) | The dashboard page's **layout structure only**: overall frame, left icon rail, top bar, two-column main grid, card shapes, section rhythm, type scale and spacing (full structural description below) | 2026-11-13 |
+| R2 | `D:\SYSTEM\Downloads\Color Hunt Palette f3f4f4853953612d532c2c2c.png` (Color Hunt palette) | The locked four-colour palette `#F3F4F4`, `#853953`, `#612D53`, `#2C2C2C`, its role mapping and contrast floors (below) | 2026-11-13 |
+
+### R1 — layout description (the contract)
+
+The build agents cannot see the image; this description is the binding contract. It is faithful to the reference and nothing more.
+
+**Overall frame.** A single large rounded panel (radius ~28px), inset ~24px from a tinted page background, with a very soft single-layer shadow. Inside the panel, a slim vertical icon rail on the far left, then the content area. No page-level header bar outside the panel; no sidebar labels, no sidebars with text.
+
+**Left icon rail** (~72px wide, full panel height): brand mark at the top (a compact square glyph), then a vertical stack of 5–6 icon-only buttons at ~24px glyph size, one of which is active. The active item is a ~40x40 rounded square (radius ~10px) filled with the dark accent, white glyph; inactive items are glyph-only with no background and no border. The rail has no dividing border, only whitespace.
+
+**Top bar** (spans the content area): on the left a pill search field (fully rounded, pale fill, magnifier glyph left, placeholder text, ~44px tall, flexible width up to roughly 640px). On the right a cluster of two circular icon buttons (~40px, pale fill) then one circular avatar (~40px).
+
+**Main area** — a two-column grid with ~24px gap, left column ~65%, right column ~35%, both stacking vertically.
+
+Left column, in order:
+1. **Hero banner card**: pale tinted fill (a low-opacity tint of the dark accent), radius ~20px, padding ~28px, min-height ~150px. Left: a two-line headline at ~22px semibold, then a dark pill CTA button (~40px tall, white text). Right: a decorative illustration region ~250px wide with abstract shapes in palette tones.
+2. **Section heading row**: title on the left (~18–20px semibold) with an optional "see all" text link on the right.
+3. **Three equal cards in a row** (the reference's "Your progress" cards): each has an icon chip at top-left in a white circle, an overflow "..." button at top-right, a two-line title, then a progress row: a small "Progress" label left, a thin (~6px) fully rounded track with a filled portion, and a percentage right-aligned. Radius ~16px, padding ~16px, each card a different pale tint.
+4. **Another section heading row**, then **two cards side by side**: each has an illustration panel across the top (~110px, pale tint, rounded top corners), then a two-line semibold title, then a meta row of small outline chips with icon + short text.
+
+Right column, in order:
+1. **Month/calendar card**: header row with two circular ghost arrow buttons and a centred month-and-year label; a row of seven weekday initials; then six square date tiles in a row, one active (filled with the dark accent, white numeral), others plain. Radius ~16px, padding ~16px.
+2. **Section heading row**.
+3. **Two stacked cards** (the reference's course cards): a row of two small tag pills (pale fill, tiny text), a title (~16–18px semibold) with a right-aligned value, a two-line muted description, a meta row of two small icon-plus-text items, and a footer with a cluster of small overlapping circular avatars on the left and a dark pill button on the right.
+
+**Type and spacing.** One sans-serif family. Card titles 15–17px semibold; body 13–14px; meta 12px muted. Vertical rhythm: 16–24px between cards, 8–12px inside them. Radii: cards 16–20px, buttons pill, icon buttons 40px circles. Shadows: one very soft layer, low opacity. Light theme only.
+
+**R1 states explicitly: the layout only.** Do not copy the reference's content, copy, illustrations, brand marks, calendar, prices, avatars or course cards. The structure, proportions, card shapes, rail, top bar and section rhythm are what is adopted.
+
+### R2 — palette (locked)
+
+Swatches in order: `#F3F4F4`, `#853953`, `#612D53`, `#2C2C2C`.
+
+Roles:
+- `#F3F4F4` — page canvas and pale surfaces;
+- `#FFFFFF` — raised cards;
+- `#2C2C2C` — primary text and the "dark pill" buttons / active nav;
+- `#612D53` — primary accent (active rail item, key buttons, focused emphasis);
+- `#853953` — secondary accent (progress fills, tags, highlight tints).
+
+Pale tints are produced by mixing an accent with white at low opacity — decorative only, never the sole carrier of meaning.
+
+Measured contrast ratios (WCAG relative-luminance formula; recorded so no later task silently picks something prettier and fails AA):
+- `#2C2C2C` ink on `#F3F4F4` canvas — 12.7:1
+- `#2C2C2C` ink on `#FFFFFF` card — 13.6:1
+- `#FFFFFF` on `#612D53` primary — 10.5:1
+- `#FFFFFF` on `#853953` secondary — 7.8:1
+
+Floors: body text ≥ 4.5:1; interactive boundaries ≥ 3:1.
 
 ## Locked intent
 
@@ -27,6 +82,9 @@ Every item below is fixed by the user statement or interview answers and may onl
 11. **Zero required API keys** — the app must be fully functional with no API keys configured (U).
 12. **Tests never hit the network** — the test suite runs entirely offline, including model-backed paths (U).
 13. **No authentication** — no login, tokens, or session security; this is explicitly out of scope (U).
+14. **Dashboard layout structure (R1)** — the UI adopts the R1 layout structure as described in `## References → R1`: the inset rounded panel frame, the left icon rail (icon-only buttons, one active as a filled rounded square), the pill search top bar with circular icon buttons and avatar, the ~65%/~35% two-column main grid with ~24px gap, and the card/section rhythm and type scale stated there. This is the layout contract for the dashboard page; other pages reuse the same frame, rail, top bar and card language.
+15. **Colour palette and contrast floor (R2)** — the UI uses exactly the four-colour palette `#F3F4F4`, `#853953`, `#612D53`, `#2C2C2C` with the role mapping and the measured contrast ratios recorded in `## References → R2`. Body text must stay ≥ 4.5:1 and interactive boundaries ≥ 3:1; pale tints are decorative only and never the sole carrier of meaning. Light theme only.
+16. **Layout only — no copied content (R1)** — the R1 reference is adopted for structure, proportions, card shapes, rail, top bar and section rhythm only. The reference's content, copy, illustrations, brand marks, calendar, prices, avatars and course cards must not be reproduced; all content comes from Khaleev's own features (F1–F6).
 
 ## Open to suggestions
 
@@ -37,6 +95,9 @@ Every item below is fixed by the user statement or interview answers and may onl
 - SUGGESTION: Ollama model default `llama3.1:8b` (configurable). Reason: good local quality/size balance. Trade-off: ~5 GB disk; user may prefer a smaller model.
 - SUGGESTION: Faithfulness scorer = local NLI via a small sentence-transformers cross-encoder (e.g. `cross-encoder/nli-deberta-v3-small`) with keyword-overlap fallback. Reason: runs offline and satisfies "tests never hit the network"; NLI is the cheapest defensible entailment signal. Trade-off: NLI models misjudge some paraphrases; the fallback and human review of eval runs mitigate this. This makes the scorer a concrete, unit-testable component instead of a vague "LLM judge".
 - SUGGESTION: Golden set stored as a human-editable JSON file per document under the data directory. Reason: curated content must be inspectable and diffable. Trade-off: no UI for editing golden sets in v1 (edit by hand).
+- SUGGESTION: Re-purpose the R1 calendar slot as the eval-run history card — the calendar card's position and shape (header row with ghost arrows, centred label, grid of small tiles) becomes a run-history grid where each small tile is an eval run, active tile = latest run. Reason: keeps the R1 right-column rhythm without shipping a decorative calendar that has no owner feature. Trade-off: the "calendar" visual becomes a grid of run tiles, which reads slightly less literally than the mockup.
+- SUGGESTION: Render the top-bar avatar as a static placeholder glyph (initial-free generic user icon, no menu) since there is no auth and no user record. Reason: keeps the R1 top-bar composition without inventing identity state the product does not have (locked intent 9/13). Trade-off: the avatar is inert chrome; if the user later wants a settings entry point, it would change this.
+- SUGGESTION: Build the hero-banner and side-by-side card illustration regions as small abstract inline-SVG shapes in palette tones, and keep them optional — if they look noisy, ship the cards without the illustration region. Reason: R2 palette tones are enough for decoration; inline SVG adds no dependency (locked intent on no new npm packages). Trade-off: hand-drawn SVG costs build time; omitting them makes the layout plainer than the mockup.
 
 ## Core features
 
@@ -64,6 +125,7 @@ These definitions are the contract for unit tests. All metrics are floats rounde
 - **Stack** (U): FastAPI (Python 3.11+) backend; React + Vite + TypeScript frontend; SQLite for metadata (documents, chunks, golden sets, eval runs); local vector index (FAISS or equivalent local file-based ANN) for embeddings; sentence-transformers for local embeddings; Ollama as the default answer generator, optional cloud API (key supplied by user) as an alternative generator.
 - **Single repo** (U): monorepo with `backend/` (FastAPI app, `src/khaleev/…`) and `frontend/` (React app); single process model: `uvicorn` serves the API and the built frontend, or `vite dev` proxies to the API during development.
 - **Local-only data** (U): all data under a single local data directory (SQLite file, PDF originals, vector index files, golden-set JSON files). No cloud storage.
+- **Visual design constraints** (U, R1, R2): the R2 palette (`#F3F4F4` / `#853953` / `#612D53` / `#2C2C2C`, roles and contrast floors per `## References → R2`) **supersedes the earlier T21 visual direction** (`#1d4e89` accent on `#f6f5f1`), which is no longer the target. No new npm dependency may be added for the redesign — no UI framework, no icon package; glyphs are inline SVG. Existing roles, text content, and ARIA semantics must not change: the redesign restyles presentation only and every functional acceptance criterion (1–11) stands unchanged.
 
 **Project tree** (A):
 
@@ -157,3 +219,4 @@ khaleev/
 | Date | Change | Source | Status |
 |---|---|---|---|
 | 2026-11-11 | Initial spec created from user statement and interview round | U | Establishes locked intent |
+| 2026-11-13 | Visual redesign adopted: R1 dashboard layout (layout structure only) and R2 palette (`#F3F4F4`/`#853953`/`#612D53`/`#2C2C2C`) added as locked intent items 14–16. Supersedes the T21 visual direction (#1d4e89 accent on #f6f5f1 — not previously recorded in this spec). All functional requirements (citations guarantee, metrics, single-user local scope, offline tests, no-auth boundary) unchanged. | U (R1, R2) | Accepted |
