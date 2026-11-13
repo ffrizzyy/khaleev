@@ -25,9 +25,9 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from khaleev.api.schemas import Citation
 from khaleev.generation.base import GenerationError
 from khaleev.retrieval.search import RetrievalResult, RetrievedChunk
+from khaleev.schemas import Citation
 
 #: Longest fallback snippet, in characters, taken from the start of a chunk.
 SNIPPET_LIMIT = 200

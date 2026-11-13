@@ -24,11 +24,11 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from khaleev.api.schemas import AnswerResponse
 from khaleev.config import Settings
 from khaleev.generation import Generator, build_prompt, parse_citations
 from khaleev.ingest.embedding import Embedder
 from khaleev.retrieval.search import retrieve
+from khaleev.schemas import AnswerResponse
 from khaleev.services import documents
 
 

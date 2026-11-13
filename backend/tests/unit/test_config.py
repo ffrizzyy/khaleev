@@ -45,6 +45,7 @@ def test_defaults_match_the_spec() -> None:
     assert settings.cloud_api_key is None
     assert settings.cloud_model is None
     assert settings.retrieval_k == 5
+    assert settings.max_upload_bytes == 50 * 1024 * 1024
     assert settings.chunk_size == 600
     assert settings.chunk_overlap_ratio == 0.12
 
@@ -114,6 +115,7 @@ def test_environment_variables_override_defaults(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("KHALEEV_CHUNK_SIZE", "700")
     monkeypatch.setenv("KHALEEV_CHUNK_OVERLAP_RATIO", "0.14")
     monkeypatch.setenv("KHALEEV_RETRIEVAL_K", "9")
+    monkeypatch.setenv("KHALEEV_MAX_UPLOAD_BYTES", "1024")
     monkeypatch.setenv("KHALEEV_GENERATOR", "cloud")
     monkeypatch.setenv("KHALEEV_CLOUD_API_KEY", "test-key")
     monkeypatch.setenv("KHALEEV_CLOUD_MODEL", "test-model")
@@ -123,6 +125,7 @@ def test_environment_variables_override_defaults(monkeypatch: pytest.MonkeyPatch
     assert settings.chunk_size == 700
     assert settings.chunk_overlap_ratio == 0.14
     assert settings.retrieval_k == 9
+    assert settings.max_upload_bytes == 1024
     assert settings.generator == "cloud"
     assert settings.cloud_api_key == "test-key"
     assert settings.cloud_model == "test-model"

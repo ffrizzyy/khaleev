@@ -316,7 +316,7 @@ class LocalEntailmentScorer:
         self._load_attempted = True
         try:
             self._model = self._model_factory()
-        except Exception as exc:  # noqa: BLE001 - any load failure means fallback, not a crash
+        except Exception as exc:  # any load failure means fallback, not a crash
             logger.info(
                 "entailment model %s is unavailable (%s); using lexical overlap",
                 self.model_id,
@@ -358,7 +358,7 @@ class LocalEntailmentScorer:
 
         try:
             return self._model_supports(model, claim, context)
-        except Exception as exc:  # noqa: BLE001 - a model failure must not abort an eval
+        except Exception as exc:  # a model failure must not abort an eval
             logger.warning(
                 "entailment model %s failed on a claim (%s); using lexical overlap",
                 self.model_id,

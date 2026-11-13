@@ -63,7 +63,9 @@ def build_prompt(question: str, retrieved: Sequence[RetrievedChunk]) -> str:
     lines.extend(
         [
             "QUESTION:",
+            "<<<",
             cleaned_question,
+            ">>>",
             "",
             "ANSWER (with page citations):",
         ]

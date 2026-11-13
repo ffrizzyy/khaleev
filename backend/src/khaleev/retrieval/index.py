@@ -12,6 +12,10 @@ Design constraints that shape this module:
 * **No database and no HTTP**: this module only knows a data directory and a
   document id, so retrieval tests can use it directly and the future search
   layer (T07) can compose it without a session.
+* **FAISS stays off the import path**: ``import faiss`` happens inside the
+  functions that touch vectors, so importing this module (or calling
+  ``index_path``) never loads the native library — the same lazy-import
+  discipline as ``khaleev.ingest.embedding``.
 * **Durable writes**: ``add`` loads the file, appends and rewrites it, so a
   second process or a fresh instance never silently drops earlier vectors.
 
@@ -25,8 +29,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-import faiss
 import numpy as np
 
 from khaleev import paths
@@ -63,7 +67,7 @@ class VectorIndex:
     def __init__(self, data_dir: Path, document_id: int) -> None:
         self.document_id = document_id
         self._path = index_path(data_dir, document_id)
-        self._index: faiss.Index | None = None
+        self._index: Any | None = None
         self._loaded = False
 
     @property
@@ -71,9 +75,11 @@ class VectorIndex:
         """Where this document's vectors live."""
         return self._path
 
-    def _load(self) -> faiss.Index | None:
+    def _load(self) -> Any | None:
         """Read the index file once per instance; ``None`` when it is absent."""
         if not self._loaded:
+            import faiss
+
             self._index = faiss.read_index(str(self._path)) if self._path.is_file() else None
             self._loaded = True
         return self._index
@@ -104,6 +110,8 @@ class VectorIndex:
             raise ValueError(f"got {len(vectors)} vectors but {len(ids)} ids")
         if not vectors:
             return
+
+        import faiss
 
         matrix = np.ascontiguousarray(np.asarray(vectors, dtype="float32"))
         if matrix.ndim != 2:
@@ -162,6 +170,8 @@ class VectorIndex:
 
     def _persist(self) -> None:
         """Write the in-memory index to its file atomically."""
+        import faiss
+
         assert self._index is not None  # only reachable after ``add`` created one
         self._path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self._path.with_name(f"{self._path.name}.tmp")

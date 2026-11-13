@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     cloud_api_key: str | None = None
     cloud_model: str | None = None
     retrieval_k: int = Field(default=5, ge=1)
+    max_upload_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
     chunk_size: int = Field(default=600, ge=400, le=800)
     chunk_overlap_ratio: float = Field(default=0.12, ge=0.10, le=0.15)
 

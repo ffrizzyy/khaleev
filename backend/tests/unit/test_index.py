@@ -20,6 +20,8 @@ No test builds a ``SentenceTransformerEmbedder``: every vector here comes from
 
 from __future__ import annotations
 
+import ast
+import importlib
 import math
 from pathlib import Path
 
@@ -50,6 +52,28 @@ def _norm(vector: list[float]) -> float:
 
 def _stored_index_files(data_dir: Path) -> list[Path]:
     return sorted(paths.DataPaths.from_data_dir(data_dir).index.glob("*.faiss"))
+
+
+def test_importing_the_index_module_does_not_need_faiss() -> None:
+    """FAISS is imported where it is used, never at module import time.
+
+    The same discipline as ``khaleev.ingest.embedding``: a caller that only needs
+    ``index_path`` must not load the native library. A module-level reintroduction
+    of the import would silently undo that, so it is asserted against the source.
+    """
+    module = importlib.import_module("khaleev.retrieval.index")
+    tree = ast.parse(Path(module.__file__ or "").read_text(encoding="utf-8"))
+    module_level = {
+        alias.name.split(".")[0]
+        for node in tree.body
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    }
+    module_level |= {
+        (node.module or "").split(".")[0] for node in tree.body if isinstance(node, ast.ImportFrom)
+    }
+
+    assert "faiss" not in module_level
 
 
 def _long_page(label: str, lines: int = 3) -> str:

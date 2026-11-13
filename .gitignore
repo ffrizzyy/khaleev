@@ -33,6 +33,9 @@ npm-debug.log*
 tmp/
 temp/
 
+# local application data (SQLite file, PDFs, vector index, golden sets)
+/data/
+
 # os and editors
 .DS_Store
 Thumbs.db

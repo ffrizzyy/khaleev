@@ -76,6 +76,15 @@ def client(app: FastAPI) -> Iterator[ApiClient]:
         yield client
 
 
+def _app_with_upload_limit(limit: int) -> FastAPI:
+    """The real app with a small, explicit upload cap so a test stays cheap."""
+    return create_app(
+        settings=Settings(_env_file=None, max_upload_bytes=limit),
+        embedder=FakeEmbedder(),
+        generator=FakeGenerator(),
+    )
+
+
 # --- upload ---------------------------------------------------------------
 
 
@@ -151,6 +160,38 @@ def test_a_corrupt_pdf_upload_is_422_and_stores_nothing(
 
     assert response.status_code == 422
     assert "PDF" in response.json()["detail"]
+    with _session(migrated_engine) as session:
+        assert _count(session, Document) == 0
+    assert list((tmp_path / "pdfs").glob("*.pdf")) == []
+
+
+def test_an_upload_at_the_size_limit_is_accepted(migrated_engine: Engine) -> None:
+    """A body just under ``max_upload_bytes`` still ingests normally."""
+    pdf = _fixture_pdf()
+    app = _app_with_upload_limit(len(pdf) + 1)
+
+    with ApiClient(app) as client:
+        response = _upload(client, pdf)
+
+    assert response.status_code == 201
+    assert response.json()["title"] == "tax-guide.pdf"
+
+
+def test_an_upload_over_the_size_limit_is_413_and_stores_nothing(
+    migrated_engine: Engine, tmp_path: Path
+) -> None:
+    """The body is rejected before ingest: no row, no file, an actionable detail."""
+    pdf = _fixture_pdf()
+    limit = len(pdf)
+    app = _app_with_upload_limit(limit)
+
+    with ApiClient(app) as client:
+        response = _upload(client, pdf + b"%", name="oversized.pdf")
+
+    assert response.status_code == 413
+    detail = response.json()["detail"]
+    assert str(limit) in detail
+    assert "limit" in detail.lower()
     with _session(migrated_engine) as session:
         assert _count(session, Document) == 0
     assert list((tmp_path / "pdfs").glob("*.pdf")) == []

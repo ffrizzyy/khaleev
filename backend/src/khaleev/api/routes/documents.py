@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Response, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 
 from khaleev.api import schemas
 from khaleev.api.deps import EmbedderDep, ServicesDep, SessionDep
@@ -26,6 +26,35 @@ from khaleev.services import documents
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 DEFAULT_FILENAME = "document.pdf"
+
+#: How much of an upload is read per ``read`` call; the cap is enforced per byte.
+UPLOAD_READ_CHUNK = 1024 * 1024
+
+
+def _read_upload_bounded(file: UploadFile, limit: int) -> bytes:
+    """Read the upload, refusing anything larger than ``limit`` bytes.
+
+    The read is streamed in fixed-size pieces and stops at ``limit + 1`` bytes,
+    so a body that is too large is never held in memory in full and is rejected
+    before any parsing, embedding or storage happens. The 413 names the cap and
+    the setting that changes it, so the caller knows how to proceed.
+    """
+    pieces: list[bytes] = []
+    total = 0
+    while True:
+        piece = file.file.read(min(UPLOAD_READ_CHUNK, limit - total + 1))
+        if not piece:
+            return b"".join(pieces)
+        pieces.append(piece)
+        total += len(piece)
+        if total > limit:
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail=(
+                    f"the uploaded PDF exceeds the {limit}-byte upload limit; "
+                    "upload a smaller PDF or raise KHALEEV_MAX_UPLOAD_BYTES"
+                ),
+            )
 
 
 def _as_document(document: DocumentRow) -> schemas.Document:
@@ -88,7 +117,7 @@ def upload_document(
     Raises the ingest domain errors (``NotAPdfError`` -> 400,
     ``CorruptPdfError`` -> 422) instead of returning a broken document.
     """
-    payload = file.file.read()
+    payload = _read_upload_bounded(file, services.settings.max_upload_bytes)
     result = documents.upload_document(
         session,
         pdf_bytes=payload,

@@ -1,8 +1,11 @@
 """Typed API models: the REST contract shared with the frontend.
 
 These models are the contract of SPEC's "API surface". They intentionally
-contain no route or service imports so the generation layer, the services and the
-API layer can all depend on them without a cycle.
+contain no route or service imports so the API layer and the layers below it can
+all depend on them without a cycle. The models the answer pipeline and the
+citation parser genuinely share (``Citation``, ``AnswerResponse``) are defined in
+the neutral ``khaleev.schemas`` and re-exported here, so every route, test and
+client keeps importing ``khaleev.api.schemas`` exactly as before.
 
 Two guarantees live in the schema itself, so no route can forget them:
 
@@ -19,35 +22,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from khaleev.schemas import AnswerResponse, Citation
+
 GeneratorChoice = Literal["ollama", "cloud"]
-
-
-class Citation(BaseModel):
-    """One source reference: the 1-based page and a supporting quote."""
-
-    page: int = Field(ge=1, description="1-based source page number")
-    quote: str = Field(min_length=1, description="Verbatim or excerpted source text")
-
-    @field_validator("quote")
-    @classmethod
-    def _quote_must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("citation quote must not be blank")
-        return value
-
-
-class AnswerResponse(BaseModel):
-    """A grounded answer: prose plus at least one page citation."""
-
-    answer: str = Field(min_length=1)
-    citations: list[Citation] = Field(min_length=1)
-
-    @field_validator("answer")
-    @classmethod
-    def _answer_must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("answer must not be blank")
-        return value
 
 
 class AskRequest(BaseModel):
