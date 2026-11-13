@@ -178,7 +178,7 @@ Execute the tasks **sequentially in the order listed** — each task depends onl
   - Acceptance — README: the styling section T21 wrote is updated to name the R2 palette and the R1 shell, and the visual-direction note points at T23/T24.
   - Verify: `cd frontend && npm run lint && npm run build && npm test -- --run && npx prettier --check .` then `cd backend && uv run ruff check . && uv run pytest -q` (the backend suite is unchanged by this task; manual check: render the app at 360px, 768px and 1280px — the frame, the rail, the top bar, the hero and the two-column grid — and confirm there is no horizontal body scroll, that focus is visible on every interactive element, that the rail's active item is a filled rounded square, and that the page text, roles and labels are the ones the suite already asserts).
 
-- [ ] T24 — Rebuild the Chat page and the Eval dashboard in the same R1/R2 system
+- [x] T24 — Rebuild the Chat page and the Eval dashboard in the same R1/R2 system
   - Depends on: T23
   - Files: `frontend/src/pages/Chat.tsx`, `frontend/src/pages/EvalDashboard.tsx`, `frontend/src/components/AskPanel.tsx`, `frontend/src/components/CitationList.tsx`, `frontend/src/components/PageViewer.tsx`, `frontend/src/components/EvalRunCard.tsx`, `frontend/src/components/EvalHistoryList.tsx`, `frontend/src/components/GoldenSetView.tsx`, `frontend/src/styles/components.css`, `frontend/src/styles/responsive.css`, `frontend/src/pages/__tests__/Chat.layout.test.tsx`, `frontend/src/pages/__tests__/EvalDashboard.layout.test.tsx`, `README.md`
   - Cites: R1 (layout), R2 (palette), locked intent 14–16 (U), and T23's tokens and shell. No new datum, endpoint or requirement is introduced.

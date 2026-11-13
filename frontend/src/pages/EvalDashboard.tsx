@@ -202,104 +202,118 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
     <>
       <p className="eval-subject">Evaluating {document.title}.</p>
 
-      <section className="panel panel--run" aria-labelledby="run-eval-heading" aria-busy={running}>
-        <h3 className="panel__title" id="run-eval-heading">
-          Run an evaluation
-        </h3>
-        <form className="run-form" onSubmit={(event) => void runEvaluation(event)}>
-          <label className="field__label" htmlFor={kInputId}>
-            k
-          </label>
-          <input
-            className="field__number"
-            id={kInputId}
-            type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
-            value={kInput}
-            disabled={running}
-            aria-describedby={kHintId}
-            onChange={(event) => setKInput(event.currentTarget.value)}
-          />
-          <p className="field__hint" id={kHintId}>
-            k is the number of retrieved chunks per question. The run records the k it used, so hit
-            rates are only comparable at the same k.
-          </p>
-          <button className="button button--primary" type="submit" disabled={running}>
-            Run evaluation
-          </button>
-        </form>
-        {running ? (
-          <p className="status" role="status">
-            Running the evaluation…
-          </p>
-        ) : null}
-        {runError !== null ? (
-          <p className="alert" role="alert">
-            {runError}
-          </p>
-        ) : null}
-      </section>
+      <div className="page-grid page-grid--two">
+        <div className="page-grid__main">
+          {historyError !== null ? (
+            <div className="notice" role="alert">
+              <p className="notice__text">Could not load the evaluation history: {historyError}</p>
+              <button className="button" type="button" onClick={retryLoad}>
+                Retry loading the eval dashboard
+              </button>
+            </div>
+          ) : null}
 
-      {historyError !== null ? (
-        <div className="notice" role="alert">
-          <p className="notice__text">Could not load the evaluation history: {historyError}</p>
-          <button className="button" type="button" onClick={retryLoad}>
-            Retry loading the eval dashboard
-          </button>
+          {loadingHistory ? (
+            <p className="status" role="status">
+              Loading evaluation history…
+            </p>
+          ) : null}
+
+          {history !== null && history.length === 0 ? (
+            <section className="panel panel--empty" aria-labelledby="no-runs-heading">
+              <h3 className="panel__title" id="no-runs-heading">
+                No evaluation runs yet
+              </h3>
+              <p className="panel__text">
+                To get a first run, add at least one entry to this document&apos;s golden-set JSON
+                file (question, expected answer and at least one expected page), choose k above,
+                then select Run evaluation.
+              </p>
+            </section>
+          ) : null}
+
+          {latest !== null ? (
+            <section className="panel panel--latest" aria-labelledby="latest-run-heading">
+              <div className="section-heading">
+                <h3 className="panel__title" id="latest-run-heading">
+                  Latest run
+                </h3>
+                <p className="latest-run__stamp">
+                  Run #{latest.id}, started{" "}
+                  <time dateTime={latest.created_at}>{formatRunTimestamp(latest.created_at)}</time>
+                </p>
+              </div>
+              <dl className="metrics">
+                <div className="metric">
+                  <dt className="metric__label">Retrieval hit rate @ k={latest.k}</dt>
+                  <dd className="metric__value">{formatMetric(latest.hit_rate)}</dd>
+                </div>
+                <div className="metric">
+                  <dt className="metric__label">Answer faithfulness</dt>
+                  <dd className="metric__value">{formatMetric(latest.faithfulness)}</dd>
+                </div>
+              </dl>
+              <p className="latest-run__meta">
+                These are the numbers every history row is compared with.
+              </p>
+            </section>
+          ) : null}
+
+          {history !== null && history.length > 0 ? <EvalHistoryList runs={history} /> : null}
         </div>
-      ) : null}
 
-      {loadingHistory ? (
-        <p className="status" role="status">
-          Loading evaluation history…
-        </p>
-      ) : null}
+        <div className="page-grid__side">
+          <section
+            className="panel panel--run"
+            aria-labelledby="run-eval-heading"
+            aria-busy={running}
+          >
+            <h3 className="panel__title" id="run-eval-heading">
+              Run an evaluation
+            </h3>
+            <form className="run-form" onSubmit={(event) => void runEvaluation(event)}>
+              <label className="field__label" htmlFor={kInputId}>
+                k
+              </label>
+              <input
+                className="field__number"
+                id={kInputId}
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={kInput}
+                disabled={running}
+                aria-describedby={kHintId}
+                onChange={(event) => setKInput(event.currentTarget.value)}
+              />
+              <p className="field__hint" id={kHintId}>
+                k is the number of retrieved chunks per question. The run records the k it used, so
+                hit rates are only comparable at the same k.
+              </p>
+              <button className="button button--primary" type="submit" disabled={running}>
+                Run evaluation
+              </button>
+            </form>
+            {running ? (
+              <p className="status" role="status">
+                Running the evaluation…
+              </p>
+            ) : null}
+            {runError !== null ? (
+              <p className="alert" role="alert">
+                {runError}
+              </p>
+            ) : null}
+          </section>
 
-      {history !== null && history.length === 0 ? (
-        <section className="panel panel--empty" aria-labelledby="no-runs-heading">
-          <h3 className="panel__title" id="no-runs-heading">
-            No evaluation runs yet
-          </h3>
-          <p className="panel__text">
-            To get a first run, add at least one entry to this document&apos;s golden-set JSON file
-            (question, expected answer and at least one expected page), choose k above, then select
-            Run evaluation.
-          </p>
-        </section>
-      ) : null}
-
-      {latest !== null ? (
-        <section className="panel panel--latest" aria-labelledby="latest-run-heading">
-          <h3 className="panel__title" id="latest-run-heading">
-            Latest run
-          </h3>
-          <p className="latest-run__meta">
-            Run #{latest.id}, started{" "}
-            <time dateTime={latest.created_at}>{formatRunTimestamp(latest.created_at)}</time>. These
-            are the numbers every history row is compared with.
-          </p>
-          <dl className="metrics">
-            <div className="metric">
-              <dt className="metric__label">Retrieval hit rate @ k={latest.k}</dt>
-              <dd className="metric__value">{formatMetric(latest.hit_rate)}</dd>
-            </div>
-            <div className="metric">
-              <dt className="metric__label">Answer faithfulness</dt>
-              <dd className="metric__value">{formatMetric(latest.faithfulness)}</dd>
-            </div>
-          </dl>
-        </section>
-      ) : null}
-
-      <GoldenSetView
-        goldenSet={goldenSet}
-        error={goldenError}
-        loading={goldenSet === null && goldenError === null}
-      />
-
-      {history !== null && history.length > 0 ? <EvalHistoryList runs={history} /> : null}
+          <GoldenSetView
+            goldenSet={goldenSet}
+            error={goldenError}
+            loading={goldenSet === null && goldenError === null}
+          />
+        </div>
+      </div>
     </>
   );
 }

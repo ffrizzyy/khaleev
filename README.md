@@ -539,8 +539,8 @@ palette and direction.
 | --- | --- |
 | `frontend/src/styles/tokens.css` | Design tokens: the R2 palette, type scale, spacing steps, radius, the single focus ring and the one soft frame shadow. Its header comment records R2's four measured WCAG ratios verbatim, the measured ratio of every further text/background pair the UI introduces, and the floors (body text ≥ 4.5:1, interactive boundaries ≥ 3:1). |
 | `frontend/src/styles/base.css` | Reset, global typography, the R1 frame — inset rounded panel, icon rail, pill-search top bar — and the shared controls (dark pill CTA, buttons, fields, alerts). |
-| `frontend/src/styles/components.css` | The Library page in R1's anatomy: hero banner, section heading rows, three-across document cards, the golden-set/document-detail row, the eval summary card and the stacked run cards. Chat, citation chips, page viewer, eval dashboard, run cards and the golden set live here too. |
-| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints; at 360px the rail is a horizontal strip and everything is one column, at 768px the rail becomes the ~72px column, and at 1280px the main area is the R1 65/35 two-column grid. |
+| `frontend/src/styles/components.css` | Every page in R1's anatomy: the Library's hero banner, section heading rows, three-across document cards, the golden-set/document-detail row, the eval summary card and the stacked run cards; Chat's document context strip, its three ask cards (question form, answer, citations) and the page-viewer card; the eval dashboard's headline metrics, its stacked run cards and the run form and golden set in the side column. |
+| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints; at 360px the rail is a horizontal strip and everything is one column, at 768px the rail becomes the ~72px column, and at 1280px the main area is the R1 65/35 two-column grid on every page. |
 
 All four are imported exactly once, in `frontend/src/main.tsx`; no component imports CSS of its
 own, and Vite emits them as a single stylesheet at build time. Highlights:
@@ -557,16 +557,23 @@ own, and Vite emits them as a single stylesheet at build time. Highlights:
   shape change as well as a colour change; the two top-bar icon links are real destinations and
   the avatar is inert, decorative chrome (there is no user record and no auth).
 - Citation chips stay real `<button>`s and read as discrete page references; the eval metric values
-  are set in monospace at the top of the type scale.
-- A flagged (non-comparable) run is marked by a bordered block and the words "Not comparable", not
-  by colour alone.
+  are set in monospace at the top of the type scale, so the latest run's two numbers are the largest
+  thing on the dashboard, with each history row's own hit rate right-aligned in the same monospace.
+- A flagged (non-comparable) run is marked by a bordered block, the words "Not comparable" and a
+  second paragraph naming the persisted field that differs — never by colour alone. The per-entry
+  disclosure is a real button carrying `aria-expanded`, and its `aria-controls` target stays in the
+  DOM (hidden while collapsed) so the idref always resolves.
 - Tap targets are at least 40px tall, focusable controls and long text wrap (`overflow-wrap:
   anywhere`), and no page scrolls horizontally at 360px, 768px or 1280px. Motion is only a colour
   fade and only under `prefers-reduced-motion: no-preference`.
 
-The same frame, rail, top bar and card language is carried onto the Chat page and the Eval dashboard
-by T24; the behaviour locked by SPEC comes first, so every role, label, string and request on those
-pages stays exactly as the test suite asserts it.
+The same frame, rail, top bar and card language now covers all three pages. T23 built the shell and
+the Library page; T24 rebuilt the Chat page (context strip, three ask cards in the left column and
+the page viewer as a card in the right column) and the Eval dashboard (headline metrics and stacked
+run cards on the left, the run form and golden set on the right) on exactly those tokens — one card
+shape, one type scale, one spacing rhythm and one focus ring, with no second palette anywhere. The
+behaviour locked by SPEC comes first, so every role, label, string and request on those pages stays
+exactly as the test suite asserts it.
 
 ## Known gaps
 

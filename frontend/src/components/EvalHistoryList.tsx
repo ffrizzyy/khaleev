@@ -37,15 +37,17 @@ export function EvalHistoryList({ runs, loadDetail }: EvalHistoryListProps): Rea
   const reference = ordered[0];
 
   return (
-    <section className="panel panel--history" aria-labelledby={headingId}>
-      <h3 className="panel__title" id={headingId}>
-        Run history
-      </h3>
+    <section className="history" aria-labelledby={headingId}>
+      <div className="section-heading">
+        <h3 className="section-heading__title" id={headingId}>
+          Run history
+        </h3>
+      </div>
       {ordered.length === 0 ? (
         <p className="empty-state">No evaluation runs yet.</p>
       ) : (
         <>
-          <p className="panel__text">
+          <p className="history__note">
             Newest first. Each run is compared with the latest run&apos;s persisted configuration,
             not with live settings.
           </p>

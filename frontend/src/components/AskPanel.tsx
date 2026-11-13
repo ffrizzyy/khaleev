@@ -93,7 +93,8 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
     void ask();
   }
 
-  function renderOutcome(): ReactElement | null {
+  /** The defect alerts stay with the form: they are the question's outcome. */
+  function renderFailure(): ReactElement | null {
     if (state.kind === "failed") {
       return (
         <p className="alert" role="alert">
@@ -124,54 +125,76 @@ export function AskPanel({ document, onOpenPage, activePage = null }: AskPanelPr
       );
     }
 
+    return null;
+  }
+
+  /** The answered state is two cards: the answer, then its citations. */
+  function renderAnswer(): ReactElement | null {
+    if (state.kind !== "answered") {
+      return null;
+    }
+    const { response } = state;
+    if (response.answer.trim().length === 0 || response.citations.length === 0) {
+      return null;
+    }
+
     return (
-      <section className="answer" aria-labelledby={answerHeadingId}>
-        <h4 className="answer__heading" id={answerHeadingId}>
-          Answer
-        </h4>
-        <p className="answer__question">Question: {state.question}</p>
-        <p className="answer__body">{response.answer}</p>
+      <>
+        <section className="panel answer" aria-labelledby={answerHeadingId}>
+          <h4 className="answer__heading" id={answerHeadingId}>
+            Answer
+          </h4>
+          <p className="answer__question">Question: {state.question}</p>
+          <p className="answer__body">{response.answer}</p>
+        </section>
         <CitationList
           citations={response.citations}
           onOpenPage={onOpenPage}
           activePage={activePage}
         />
-      </section>
+      </>
     );
   }
 
   return (
-    <section className="panel panel--ask" aria-labelledby={`${inputId}-heading`} aria-busy={asking}>
-      <h3 className="panel__title" id={`${inputId}-heading`}>
-        Ask a question
-      </h3>
-      <form className="ask-form" onSubmit={handleSubmit}>
-        <label className="field__label" htmlFor={inputId}>
-          Question
-        </label>
-        <input
-          className="field__text"
-          id={inputId}
-          type="text"
-          value={question}
-          disabled={asking}
-          aria-describedby={hintId}
-          onChange={(event) => setQuestion(event.currentTarget.value)}
-        />
-        <p className="field__hint" id={hintId}>
-          The answer uses only page-attributed text from this document, and every answer cites its
-          source pages.
-        </p>
-        <button className="button button--primary" type="submit" disabled={asking}>
-          Ask
-        </button>
-      </form>
-      {asking ? (
-        <p className="status" role="status">
-          Asking the selected document…
-        </p>
-      ) : null}
-      {renderOutcome()}
-    </section>
+    <>
+      <section
+        className="panel panel--ask"
+        aria-labelledby={`${inputId}-heading`}
+        aria-busy={asking}
+      >
+        <h3 className="panel__title" id={`${inputId}-heading`}>
+          Ask a question
+        </h3>
+        <form className="ask-form" onSubmit={handleSubmit}>
+          <label className="field__label" htmlFor={inputId}>
+            Question
+          </label>
+          <input
+            className="field__text"
+            id={inputId}
+            type="text"
+            value={question}
+            disabled={asking}
+            aria-describedby={hintId}
+            onChange={(event) => setQuestion(event.currentTarget.value)}
+          />
+          <p className="field__hint" id={hintId}>
+            The answer uses only page-attributed text from this document, and every answer cites its
+            source pages.
+          </p>
+          <button className="button button--primary" type="submit" disabled={asking}>
+            Ask
+          </button>
+        </form>
+        {asking ? (
+          <p className="status" role="status">
+            Asking the selected document…
+          </p>
+        ) : null}
+        {renderFailure()}
+      </section>
+      {renderAnswer()}
+    </>
   );
 }

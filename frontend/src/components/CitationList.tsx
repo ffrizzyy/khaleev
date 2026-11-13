@@ -37,7 +37,7 @@ export function CitationList({
   }
 
   return (
-    <section className="citations" aria-labelledby={headingId}>
+    <section className="panel citations" aria-labelledby={headingId}>
       <h4 className="citations__heading" id={headingId}>
         Citations
       </h4>

@@ -144,7 +144,7 @@ export function PageViewer({
   return (
     <section
       ref={dialogRef}
-      className="page-viewer"
+      className="panel page-viewer"
       role="dialog"
       aria-labelledby={headingId}
       tabIndex={-1}

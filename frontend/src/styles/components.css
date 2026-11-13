@@ -36,9 +36,10 @@
 .panel {
   display: grid;
   gap: var(--space-4);
-  padding: var(--space-5);
+  min-width: 0;
+  padding: var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background-color: var(--color-surface);
 }
 
@@ -87,18 +88,26 @@
 
 /* Library: R1 page grid -------------------------------------------------- */
 
-.library-grid {
+.library-grid,
+.page-grid {
   display: grid;
   gap: var(--grid-gap);
   min-width: 0;
 }
 
 .library-main,
-.library-side {
+.library-side,
+.page-grid__main,
+.page-grid__side {
   display: grid;
   gap: var(--space-5);
   align-content: start;
   min-width: 0;
+}
+
+/* The side column is a card column too; it never stretches a short card. */
+.page-grid__side {
+  align-self: start;
 }
 
 /* Library: hero banner --------------------------------------------------- */
@@ -617,32 +626,51 @@
   border-block-start: 1px solid var(--color-border);
 }
 
-/* Chat: selected document context --------------------------------------- */
+/* Chat: the document context strip (replaces T21's hero) ------------------ */
 
-.chat-context {
-  display: grid;
-  gap: var(--space-2);
-  padding-block-end: var(--space-3);
-  border-block-end: 1px solid var(--color-border);
+.context-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-inline-start: 3px solid var(--color-accent);
+  border-radius: var(--radius-card);
+  background-color: var(--color-accent-tint-2);
 }
 
-.chat-context__title {
+.context-strip__copy {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.context-strip__title {
   font-size: var(--text-xl);
   overflow-wrap: anywhere;
 }
 
-.chat-context__meta {
+.context-strip__meta {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 
-.chat-context__lede {
+.context-strip__lede {
   max-width: var(--measure);
   color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
-/* Chat: question form and answer ---------------------------------------- */
+.context-strip__action {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Chat: the answer card -------------------------------------------------- */
 
 .panel--ask {
   gap: var(--space-4);
@@ -660,18 +688,22 @@
 
 .answer {
   display: grid;
-  gap: var(--space-3);
-  padding-block-start: var(--space-4);
-  border-block-start: 1px solid var(--color-border);
+  gap: var(--space-2);
 }
 
+/* No `text-transform` on a labelled element: it would also change the name in
+   the accessibility tree, and the region is queried as "Answer". */
 .answer__heading {
-  font-size: var(--text-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .answer__question {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 /* The answer is the loudest prose on the page: larger than the question. */
@@ -679,6 +711,7 @@
   max-width: var(--measure);
   font-size: var(--text-lg);
   line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
 }
 
 /* Citations: discrete, clickable page references, not decorative pills -- */
@@ -717,6 +750,7 @@
 
 .citation__chip {
   justify-self: start;
+  max-width: 100%;
   min-height: var(--tap-target);
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-border-strong);
@@ -753,21 +787,25 @@
 
 .citation__quote {
   max-width: var(--measure);
+  min-width: 0;
   padding-inline-start: var(--space-3);
   border-inline-start: 2px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
-/* Page viewer ----------------------------------------------------------- */
+/* Page viewer card ------------------------------------------------------- */
 
 .page-viewer {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-5);
+  align-self: start;
+  min-width: 0;
+  padding: var(--space-4);
   border: 1px solid var(--color-border-strong);
   border-inline-start: 4px solid var(--color-accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background-color: var(--color-surface);
 }
 
@@ -831,6 +869,13 @@
   border-inline-start: 4px solid var(--color-accent);
 }
 
+.latest-run__stamp {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
 .latest-run__meta {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -844,6 +889,7 @@
 .metric {
   display: grid;
   gap: var(--space-1);
+  min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-block-start: 3px solid var(--color-accent);
@@ -876,21 +922,19 @@
   overflow-wrap: anywhere;
 }
 
-.metrics--compact {
-  gap: var(--space-2);
+/* Run history: R1's stacked cards --------------------------------------- */
+
+.history {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
-.metrics--compact .metric {
-  padding: var(--space-3);
-  background-color: var(--color-surface);
+.history__note {
+  max-width: var(--measure);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
-
-.metrics--compact .metric__value {
-  font-size: var(--text-xl);
-  letter-spacing: 0;
-}
-
-/* Run history ----------------------------------------------------------- */
 
 .history-list {
   display: grid;
@@ -905,17 +949,18 @@
 
 .run-card {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-canvas);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
 }
 
 /*
  * A flagged run is cued by more than hue: a 4px inline-start rule, the
- * "Not comparable" text, and a card-level border. The colour only reinforces it.
+ * "Not comparable" pill's own border, and the bordered note naming the field
+ * that differs. The colour only reinforces them.
  */
 .run-card--flagged {
   border-color: var(--color-danger);
@@ -923,51 +968,115 @@
   background-color: var(--color-danger-soft);
 }
 
-.run-card__header {
+.run-card__title-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
   align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
 }
 
 .run-card__title {
-  font-size: var(--text-lg);
+  min-width: 0;
+  font-size: var(--text-card);
+  overflow-wrap: anywhere;
 }
 
-.run-card__meta {
+/* The right-aligned value R1 gives each stacked card. */
+.run-card__hit {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.1rem;
+  justify-items: end;
+  min-width: 0;
+}
+
+.run-card__hit-label {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.run-card__hit-value {
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.run-card__secondary {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
-.comparable {
+.run-card__metric {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.run-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.run-card__meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.run-card__icon {
+  flex: 0 0 auto;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.run-card__note {
+  max-width: var(--measure);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
 
-.comparable--flagged {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3);
+.run-card__note--flagged {
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-danger);
   border-inline-start-width: 4px;
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   color: var(--color-danger);
-  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.comparable--flagged strong {
-  font-weight: 700;
+.run-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
 }
 
-.run-card > .button {
-  justify-self: start;
-}
-
+/* The collapsed detail stays in the DOM so `aria-controls` always resolves. */
 .run-card__detail {
   display: grid;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+.run-card__detail[hidden] {
+  display: none;
 }
 
 .entries {

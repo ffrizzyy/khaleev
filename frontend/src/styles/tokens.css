@@ -38,8 +38,11 @@
  *     #612D53 primary on white (focus ring, tags) ........... 10.5:1
  *     #612D53 primary on canvas, where the focus ring sits ...  9.5:1
  *     #612D53 primary on an 8% secondary tint (tag pills) ...  9.2:1
+ *     #612D53 primary on a 10% secondary tint (T24 flag cards)   8.9:1
  *     #853953 danger/report on #FFFFFF ......................  7.8:1
  *     #853953 danger on a 10% secondary tint ................  6.6:1
+ *       (recomputed from the exact values: 6.3:1; the recorded 6.6:1 stays
+ *        and both clear the 4.5:1 body floor)
  *     #808080 boundary (ink mixed 60% with white) on white ...  4.0:1
  *     #808080 boundary on an 8% secondary tint ..............  3.5:1
  *

@@ -30,6 +30,10 @@
     padding-inline: var(--space-4);
   }
 
+  .context-strip {
+    padding: var(--space-4);
+  }
+
   .page-viewer {
     padding: var(--space-4);
   }
@@ -44,6 +48,10 @@
   }
 
   .run-summary__footer {
+    justify-content: flex-start;
+  }
+
+  .run-card__footer {
     justify-content: flex-start;
   }
 }
@@ -130,7 +138,8 @@
 
 @media (min-width: 80rem) {
   /* The R1 two-column main grid: left ~65%, right ~35%, ~24px gap. */
-  .library-grid {
+  .library-grid,
+  .page-grid--two {
     grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
   }
 
@@ -152,7 +161,7 @@
   }
 
   .panel {
-    padding: var(--space-6);
+    padding: var(--space-5);
   }
 
   .metrics {
