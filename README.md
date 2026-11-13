@@ -16,10 +16,10 @@ a local Ollama model.
 - **Layout:** monorepo — `backend/` (package `khaleev`) and `frontend/`.
 - **Docs:** [docs/architecture.md](docs/architecture.md) explains the request flow and module map;
   [docs/references/README.md](docs/references/README.md) is the home for future reference material.
-- **Status:** v0.1.0. The v1 feature set in `SPEC.md` is implemented. Three open defects are
-  documented under [Known gaps](#known-gaps) — read that section before your first run:
-  migrations are not applied at startup, `uvicorn` is not declared, and the UI has no stylesheet
-  yet.
+- **Status:** v0.1.0. The v1 feature set in `SPEC.md` is implemented. The database schema is
+  created and migrated automatically when the API starts, so a clean `uv sync` plus the documented
+  run command is all a fresh install needs. One quality gap remains under
+  [Known gaps](#known-gaps): the UI has no stylesheet yet.
 
 ---
 
@@ -90,37 +90,26 @@ uv sync
 `uv sync` creates `backend/.venv` and installs the `khaleev` package in editable mode with its
 dependencies.
 
-### 2. Create the database schema (once, from `backend/`)
+### 2. No migration step — the schema is created on startup
 
-```bash
-uv run alembic upgrade head
-```
+There is no manual migration step. When the API starts it applies its own Alembic migrations to the
+SQLite file in the data directory — creating the file and every table on a fresh install — before
+serving any request. The step is idempotent: against a database already at `head` it is a no-op and
+it never drops, truncates or re-seeds rows, so restarting the server is always safe.
 
-This creates the SQLite file at `<data_dir>/khaleev.db` with the full schema: `documents`, `chunks`,
-`golden_sets`, `eval_runs`, `eval_run_entries`.
-
-> **Required:** the app does **not** apply migrations on startup and does not create tables lazily.
-> If you skip this step, the first API call that touches the database fails with
-> `sqlite3.OperationalError: no such table: ...`. See [Known gaps](#known-gaps).
+It runs the same migration history as the CLI, so the two can never disagree about the schema.
+`cd backend && uv run alembic upgrade head` still works and is useful for inspection or tooling, but
+it is **not** part of setup and you never need to run it by hand.
 
 ### 3. Start the API (from `backend/`)
 
-The SPEC command is:
+The SPEC command, which works after `uv sync` because `uvicorn` is a declared backend dependency:
 
 ```bash
 uv run uvicorn khaleev.app:app --reload --port 8000
 ```
 
-**As of v0.1.0 that command fails**, because `uvicorn` is not declared as a dependency in
-`backend/pyproject.toml` (`uv run uvicorn` → `error: Failed to spawn: uvicorn`). The checked
-workaround is to let uv supply it ephemerally:
-
-```bash
-uv run --with uvicorn uvicorn khaleev.app:app --reload --port 8000
-```
-
-This is an open defect, not a design choice; see [Known gaps](#known-gaps). API docs are then at
-<http://localhost:8000/docs>.
+No ephemeral `--with` package overlay is needed. API docs are then at <http://localhost:8000/docs>.
 
 ### 4. Start the frontend (from `frontend/`)
 
@@ -186,9 +175,7 @@ All commands are the repository's real commands; run each from the directory sho
 | Purpose | Command | Working directory |
 | --- | --- | --- |
 | Install backend deps | `uv sync` | `backend/` |
-| Apply migrations | `uv run alembic upgrade head` | `backend/` |
-| Run the API (SPEC form, currently fails — see gaps) | `uv run uvicorn khaleev.app:app --reload --port 8000` | `backend/` |
-| Run the API (working form) | `uv run --with uvicorn uvicorn khaleev.app:app --reload --port 8000` | `backend/` |
+| Run the API | `uv run uvicorn khaleev.app:app --reload --port 8000` | `backend/` |
 | Backend tests | `uv run pytest` (add `-q` for less output) | `backend/` |
 | Backend lint | `uv run ruff check .` | `backend/` |
 | Install frontend deps | `npm install` | `frontend/` |
@@ -253,6 +240,8 @@ Everything lives under one directory (`KHALEEV_DATA_DIR`, default `<repo>/data`)
 
 - `content_hash` is the SHA-256 of the uploaded bytes; it is both the dedupe key and the stored
   filename.
+- `khaleev.db` is created and brought to the Alembic head automatically when the API starts; there
+  is no manual migration step, and a restart never changes an already-migrated database.
 - The FAISS file stores unit-length vectors (`IndexIDMap2` over `IndexFlatIP`), keyed by
   `chunks.id`; a match maps back to a chunk row through `chunks.embedding_ref`, and from there to
   its page number.
@@ -285,7 +274,7 @@ If something goes wrong:
 
 | Symptom | Cause and fix |
 | --- | --- |
-| `no such table` error | Migrations were never applied: run `uv run alembic upgrade head` in `backend/`. |
+| `no such table` error | Should not happen: the app applies its migrations on startup. If it does, the startup migration failed (for example the data directory is not writable) — check the server log. `cd backend && uv run alembic upgrade head` applies the same history by hand for diagnosis. |
 | Ask returns 503 mentioning Ollama | Ollama is not running or the model is not pulled: `ollama serve`, `ollama pull llama3.1:8b`. |
 | First upload or ask fails while the embedding model loads | This path has no dedicated error mapping (no 4xx/503 with a repair hint), so check the server log. The download was refused or interrupted: rerun the explicit download command in [First-run model downloads](#first-run-model-downloads) and confirm the model is in the local cache. |
 | Ask returns 422 "no indexed text" | The document has no embedded chunks (e.g. ingested before an embedder was available). Delete and re-upload the PDF. |
@@ -482,8 +471,8 @@ directory you intend to use:
 
 1. `ollama serve` (or confirm the service is running), then `ollama pull llama3.1:8b` and
    `ollama list` to confirm the model is present.
-2. Start the API with the working command
-   `uv run --with uvicorn uvicorn khaleev.app:app --reload --port 8000` from `backend/`, and
+2. Start the API with the SPEC command
+   `uv run uvicorn khaleev.app:app --reload --port 8000` from `backend/`, and
    `npm run dev` from `frontend/`.
 3. In the UI: upload a real multi-page PDF, select it, and ask a question whose answer is visibly
    on a known page.
@@ -519,6 +508,7 @@ real lists from `backend/pyproject.toml` and `frontend/package.json`.
 | `faiss-cpu` | Local file-backed vector index (`<data_dir>/index/<document_id>.faiss`). |
 | `numpy` | Vector arrays for the FAISS index. |
 | `httpx` | Ollama and optional cloud generator HTTP clients; `MockTransport` keeps their tests offline. |
+| `uvicorn` | The ASGI server for SPEC's run command (`uv run uvicorn khaleev.app:app --reload --port 8000`); declared here so `uv sync` installs it. |
 
 Backend development-only (`[dependency-groups].dev`): `pytest`, `ruff`.
 
@@ -535,50 +525,27 @@ Frontend development-only (`devDependencies`): `vite`, `@vitejs/plugin-react`, `
 `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `globals`, `prettier`, `vitest`,
 `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`.
 
-**Not declared, but used:** `uvicorn` is required to run the API and is missing from
-`backend/pyproject.toml` — see [Known gaps](#known-gaps) item 2. Adding it is a dependency decision
-for you (SPEC says ask first), so it is documented rather than silently added.
-
 ## Known gaps
 
-These are **open defects**, documented as they are. They are not fixed in v0.1.0.
+One open quality gap. The two backend defects a live run of v0.1.0 exposed — the app not applying
+migrations on startup, and `uvicorn` being undeclared — are fixed; see
+[Zero-key local setup](#zero-key-local-setup) and the dependency table above.
 
-1. **The app does not apply database migrations on startup.** `create_app()` builds the app,
-   registers routes and exception handlers, and the lifespan hook only disposes the engine on
-   shutdown; nothing calls Alembic and nothing calls `Base.metadata.create_all`. The database file
-   is created lazily on the first request that needs a session, with no tables.
-   *Symptom:* the first API call raises `sqlite3.OperationalError: no such table: ...`.
-   *Workaround:* run `cd backend && uv run alembic upgrade head` once before first use (and after
-   any future migration).
-   *Status:* open and unfixed in v0.1.0. Either the app should run `upgrade head` at startup or the
-   docs and setup script must keep this step explicit.
-
-2. **`uvicorn` is used in the SPEC run command but is not declared in `backend/pyproject.toml`.**
-   It is absent from both `[project].dependencies` and `uv.lock`, so
-   `uv run uvicorn khaleev.app:app --reload --port 8000` fails with
-   `error: Failed to spawn: uvicorn` / `cause: program not found` (checked in this checkout).
-   *Workaround:* `uv run --with uvicorn uvicorn khaleev.app:app --reload --port 8000` — uv installs
-   uvicorn into the ephemeral run environment. This was checked with
-   `uv run --with uvicorn uvicorn --version`, which reports `uvicorn 0.54.0`.
-   *Status:* open and unfixed in v0.1.0. The real fix is declaring `uvicorn` as a runtime
-   dependency, which is a `## Boundaries → Ask first` decision for you, not something this
-   documentation change may do.
-
-3. **The frontend has no stylesheet, so the UI renders as unstyled HTML.** `frontend/src/main.tsx`
+1. **The frontend has no stylesheet, so the UI renders as unstyled HTML.** `frontend/src/main.tsx`
    imports no CSS file, and the repository contains no `.css`, `.scss` or `.less` file. The only
    styling anywhere is two inline `style` objects in `frontend/src/components/PageViewer.tsx` (the
    dialog border/padding and `white-space: pre-wrap` for page text).
    *Symptom:* the app is readable and fully functional, but has no layout, typography, spacing or
    visual hierarchy — it looks like a bare HTML document.
    *Workaround:* none in v0.1.0; use the app as it is.
-   *Status:* open and unfixed. Styling is scheduled for task **T20**, not done here.
+   *Status:* open. Styling is scheduled for task **T21** (hand-written CSS, no new dependency).
 
 Not a defect, but worth knowing: the API serves `/api` only. `backend/src/khaleev/app.py` has no
 static-file mount for `frontend/dist/` and no CORS middleware. That matches the SPEC's development
 model ("`vite dev` proxies to the API"), which is the supported path; `npm run build` output is
 simply not served by uvicorn.
 
-Beyond these three defects, the v1 scope is complete: upload, per-page extraction and chunking,
+Beyond that styling gap, the v1 scope is complete: upload, per-page extraction and chunking,
 local embeddings and FAISS retrieval, cited answers, golden sets, both metrics, eval persistence and
 the dashboard with comparability flags all work and are covered by the offline test suites.
 

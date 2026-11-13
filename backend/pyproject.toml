@@ -14,6 +14,7 @@ dependencies = [
     "python-multipart>=0.0.33",
     "sentence-transformers>=6.3.0",
     "sqlalchemy>=2.1.8",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]

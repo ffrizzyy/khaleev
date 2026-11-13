@@ -43,16 +43,18 @@ browser ──▶ Vite dev server :5173 ──▶ proxy /api ──▶ FastAPI (
 - `frontend/vite.config.ts` proxies `/api` to `http://localhost:8000`; `frontend/src/api/client.ts`
   always calls the relative `/api` base, so the same client code works behind the proxy.
 - The backend exposes `/api` only — it does not mount `frontend/dist`, and no CORS middleware is
-  configured. The Vite dev proxy is the supported UI path in v1; this is a limitation, not one of
-  the three open defects (see section 11).
+  configured. The Vite dev proxy is the supported UI path in v1; this is a deliberate limitation,
+  described in section 11.
 - `create_app()` in `backend/src/khaleev/app.py` is the only constructor. It takes
   `settings`, `embedder`, `generator`, `scorer` as optional arguments; production calls it with none
   and the real implementations are built lazily. `app = create_app()` at module level is what
   uvicorn imports (`khaleev.app:app`).
 - `AppServices` (`backend/src/khaleev/api/deps.py`) holds the per-process container on
   `app.state.services`: the SQLite engine (opened on first use), the embedder, the generator and the
-  scorer (each built on first use). The lifespan hook disposes the engine on shutdown. Importing the
-  app creates no directory, loads no model and opens no socket.
+  scorer (each built on first use).
+- The lifespan hook applies the app's Alembic migrations to the configured data directory before
+  serving (`khaleev.migrations.apply_startup_migrations`) and disposes the engine on shutdown.
+  Importing the app creates no directory, runs no migration, loads no model and opens no socket.
 
 ## 3. Module map
 
@@ -66,6 +68,7 @@ browser ──▶ Vite dev server :5173 ──▶ proxy /api ──▶ FastAPI (
 | `db.py` | SQLite engine, session factory, `PRAGMA foreign_keys=ON` per connection, `database_path()`. |
 | `models/` | SQLAlchemy ORM: `document.py`, `chunk.py`, `golden.py`, `eval_run.py` (`EvalRun`, `EvalRunEntry`), `base.py`. |
 | `migrations/` | Alembic environment (`env.py`, resolving the DB from `Settings.data_dir`) and `versions/0001_initial.py`. |
+| `migrations.py` | `apply_startup_migrations()` — applies `alembic upgrade head` to the configured data dir on every boot, idempotently and on the CLI's history. |
 | `api/deps.py` | `AppServices` container and the FastAPI dependency providers (`SessionDep`, `EmbedderDep`, `GeneratorDep`, `ScorerDep`, `ServicesDep`). |
 | `api/schemas.py` | The typed REST contract shared with the frontend: documents, ask, config, golden set, eval runs. |
 | `api/routes/documents.py` | Upload, list, detail, page text, golden set, delete. |
@@ -348,7 +351,8 @@ These are architectural choices, not defects:
   `chunks.document_id`.
 - No OCR: a scanned page yields empty text and therefore no chunks.
 
-Open defects (migrations are not applied at startup; `uvicorn` is undeclared in
-`backend/pyproject.toml`; the frontend has no stylesheet, so the UI is unstyled until T20) are
-listed with their workarounds in the README's [Known gaps](../README.md#known-gaps). The built
+Open defects that a live run of v0.1.0 exposed are fixed: the app applies its Alembic migrations on
+startup (so a fresh install needs no manual step), and `uvicorn` is a declared backend dependency.
+The remaining quality gap — the frontend has no stylesheet, so the UI is unstyled — is listed with
+its workaround in the README's [Known gaps](../README.md#known-gaps) and scheduled for T21. The built
 frontend not being served by the API is a separate v1 limitation, described in section 2.

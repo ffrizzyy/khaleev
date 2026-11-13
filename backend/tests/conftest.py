@@ -4,7 +4,8 @@ The suite must never reach the network (SPEC AC8, Locked intent #12), so an
 autouse guard replaces every outbound socket entry point with a function that
 raises before any packet leaves the process. The ``migrated_engine`` and
 ``migrated_session`` fixtures give integration tests the schema that actually
-ships, produced by ``alembic upgrade head`` rather than by the ORM metadata.
+ships, produced by the app's own migration helper — the same Alembic history as
+``alembic upgrade head``, never by the ORM metadata.
 """
 
 from __future__ import annotations
@@ -16,18 +17,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from khaleev import paths
 from khaleev.db import create_engine, create_session_factory
+from khaleev.migrations import upgrade_to_head
 
 KHALEEV_ENV_PREFIX = "KHALEEV_"
-
-ALEMBIC_INI = paths.BACKEND_ROOT / "alembic.ini"
-MIGRATIONS_DIR = paths.PACKAGE_ROOT / "migrations"
 
 
 class NetworkAccessBlocked(OSError):
@@ -69,25 +65,20 @@ def isolated_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def alembic_config() -> Config:
-    """Alembic config bound to this checkout, independent of the cwd."""
-    config = Config(str(ALEMBIC_INI))
-    config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    return config
-
-
 @pytest.fixture
 def migrated_engine(isolated_data_dir: Path) -> Iterator[Engine]:
-    """A throwaway SQLite database whose schema comes from ``alembic upgrade head``.
+    """A throwaway SQLite database whose schema comes from the Alembic history.
 
     Integration tests exercise the migrated schema, not one built by
     ``Base.metadata.create_all``, so a drift between the models and the shipped
-    migration cannot hide behind a test-only schema. The data directory is the
-    per-test ``tmp_path`` because ``env.py`` resolves ``Settings.data_dir``.
+    migration cannot hide behind a test-only schema. The schema is applied with
+    ``khaleev.migrations.upgrade_to_head`` — the same helper the app's startup
+    hook calls — so tests and production share one migration code path (T20).
+    The data directory is the per-test ``tmp_path``, passed explicitly.
     """
-    command.upgrade(alembic_config(), "head")
     engine = create_engine(isolated_data_dir)
     try:
+        upgrade_to_head(engine)
         yield engine
     finally:
         engine.dispose()

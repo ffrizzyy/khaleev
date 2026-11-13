@@ -7,6 +7,12 @@ real service layer without loading a model or opening a socket (Locked intent
 #12, AC8). Production calls ``create_app()`` with no arguments: settings come from
 the environment and the real embedder/generator are built lazily on first use.
 
+The lifespan hook applies the app's own Alembic migrations to the configured data
+directory before the first request is served (T20), which is what makes a fresh
+install work with no manual step. The migration helper is idempotent and shares
+the CLI's history (``khaleev.migrations``), so booting again changes nothing and
+the two can never disagree about the schema.
+
 Domain errors are mapped here, once, so no route has to guess a status code and
 no caller ever receives a traceback:
 
@@ -39,6 +45,7 @@ from khaleev.evals.scorer import EntailmentScorer
 from khaleev.generation import GenerationError, Generator
 from khaleev.ingest.embedding import Embedder
 from khaleev.ingest.pdf import CorruptPdfError, NotAPdfError
+from khaleev.migrations import apply_startup_migrations
 from khaleev.services.documents import DocumentNotFoundError, PageOutOfRangeError
 from khaleev.services.evals import EvalRunNotFoundError
 from khaleev.services.qa import NoContextError
@@ -60,11 +67,21 @@ def _json_error(status_code: int) -> ExceptionHandler:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Release the lazily opened database engine when the app shuts down."""
+    """Prepare the database on startup and release the engine on shutdown.
+
+    Startup applies the app's Alembic migrations to the configured data
+    directory (T20). That is what makes a fresh install work with no manual
+    ``alembic upgrade head``: the step runs before the first request is served,
+    is idempotent (a no-op at head) and shares the CLI's migration history, so
+    the app and the CLI can never disagree about the schema. It never drops or
+    re-seeds rows on an already-migrated database.
+    """
+    services: AppServices = app.state.services
+    apply_startup_migrations(services.settings.data_dir)
     try:
         yield
     finally:
-        app.state.services.dispose()
+        services.dispose()
 
 
 def create_app(
