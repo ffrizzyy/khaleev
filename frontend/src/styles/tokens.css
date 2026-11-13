@@ -1,85 +1,102 @@
 /**
- * Khaleev design tokens (T21).
+ * Khaleev design tokens — R2 palette, R1 scale (T23).
  *
- * One light theme, one accent. Every value below is hand-written and used by
- * `base.css`, `components.css` and `responsive.css`; no framework, no
- * preprocessor, no runtime.
+ * One light theme only: `color-scheme: light`, no `prefers-color-scheme`
+ * branch, no dark tokens. The palette is exactly R2's four colours plus white;
+ * every other colour is a pale tint made by mixing an accent (or the ink) with
+ * white, and tints are decorative only — never the sole carrier of meaning.
  *
- * Contrast pairs used in the UI
- * -----------------------------
- * Measured against the WCAG 2.1 relative-luminance formula (computed from the
- * exact values below; text requires 4.5:1, non-text UI boundaries 3:1).
+ *     #F3F4F4  canvas and pale surfaces
+ *     #FFFFFF  raised cards
+ *     #2C2C2C  ink, dark pills and active nav
+ *     #612D53  primary accent (active rail item, key buttons, focus)
+ *     #853953  secondary accent (tags, highlights, pale tints)
  *
- * Body and heading text
- *   --color-text (#1b1a18) on --color-canvas (#f6f5f1) .......... 15.94:1
- *   --color-text (#1b1a18) on --color-surface (#ffffff) ......... 17.39:1
- *   --color-text (#1b1a18) on --color-surface-muted (#f1efea) ... 15.13:1
- *   --color-text (#1b1a18) on --color-accent-soft (#e8eef7) ..... 14.91:1
+ * Contrast pairs (WCAG 2.1 relative-luminance formula)
+ * ---------------------------------------------------
+ * R2's four recorded ratios, verbatim:
+ *     #2C2C2C ink on #F3F4F4 canvas ......................... 12.7:1
+ *     #2C2C2C ink on #FFFFFF card ........................... 13.6:1
+ *     #FFFFFF on #612D53 primary ............................ 10.5:1
+ *     #FFFFFF on #853953 secondary ..........................  7.8:1
  *
- * Secondary text (captions, hints, metadata)
- *   --color-text-muted (#57534b) on --color-canvas (#f6f5f1) ....  7.01:1
- *   --color-text-muted (#57534b) on --color-surface (#ffffff) ...  7.65:1
- *   --color-text-muted (#57534b) on --color-surface-muted .......  6.66:1
+ * Recomputed from the exact values: ink on white measures 14.0:1 (the recorded
+ * 13.6:1 stays; the recomputed figure is noted beside it). The other three
+ * recompute to the recorded values (12.67, 10.46 and 7.76).
  *
- * Accent (links, active navigation, selected controls)
- *   --color-accent (#1d4e89) on --color-surface (#ffffff) .......  8.39:1
- *   --color-accent (#1d4e89) on --color-canvas (#f6f5f1) ........  7.69:1
- *   --color-accent (#1d4e89) on --color-accent-soft (#e8eef7) ...  7.19:1
- *   --color-on-accent (#ffffff) on --color-accent (#1d4e89) .....  8.39:1
- *   --color-on-accent (#ffffff) on --color-accent-strong (#163c6b) 11.09:1
+ * Pairs introduced by the R1 shell and the Library cards (recomputed from the
+ * values below, same formula):
+ *     #612D53 primary on #F3F4F4 canvas .....................  9.5:1
+ *     #853953 secondary on #F3F4F4 canvas ...................  7.0:1
+ *     #2C2C2C ink on an 8% secondary tint ................... 12.3:1
+ *     #2C2C2C ink on a 6% primary tint ...................... 12.6:1
+ *     #6B6B6B muted (ink mixed 70% with white) on #FFFFFF ....  5.3:1
+ *     #6B6B6B muted on #F3F4F4 canvas .......................  4.8:1
+ *     #6B6B6B muted on an 8% secondary tint .................  4.7:1
+ *     #6B6B6B muted on a 6% primary tint ....................  4.8:1
+ *     #FFFFFF on #2C2C2C dark pill .......................... 14.0:1
+ *     #612D53 primary on white (focus ring, tags) ........... 10.5:1
+ *     #612D53 primary on canvas, where the focus ring sits ...  9.5:1
+ *     #612D53 primary on an 8% secondary tint (tag pills) ...  9.2:1
+ *     #853953 danger/report on #FFFFFF ......................  7.8:1
+ *     #853953 danger on a 10% secondary tint ................  6.6:1
+ *     #808080 boundary (ink mixed 60% with white) on white ...  4.0:1
+ *     #808080 boundary on an 8% secondary tint ..............  3.5:1
  *
- * Errors, warnings and flagged (non-comparable) runs
- *   --color-danger (#8a1c1c) on --color-danger-soft (#fbecec) ...  8.09:1
- *   --color-danger (#8a1c1c) on --color-surface (#ffffff) .......  9.28:1
- *   --color-danger (#8a1c1c) on --color-canvas (#f6f5f1) ........  8.50:1
+ * `--color-text-muted` was mixed at 65% in the first pass, which measured
+ * 4.12:1 on the canvas and failed the floor; it is mixed at 70% now. The
+ * hairline `--color-border` (10%, 1.2:1) is decorative: it only edges
+ * non-interactive cards and dividers, never the boundary of a control.
  *
- * Non-text boundaries (form controls, chips, focus ring)
- *   --color-border-strong (#8f887a) on --color-surface ...........  3.52:1
- *   --color-border-strong (#8f887a) on --color-canvas ............  3.22:1
- *   --color-focus (#1d4e89) on --color-canvas (#f6f5f1) .........  7.69:1
- *
- * --color-border (#d8d4cb) is a decorative hairline only (1.48:1 on white);
- * it is never used as the only boundary of an interactive control.
+ * Floors: body text >= 4.5:1, interactive boundaries >= 3:1. The hairline
+ * `--color-border` is decorative only and is never the sole boundary of an
+ * interactive control; controls use `--color-border-strong`.
  */
 
 :root {
-  /* The UI is light-only by design; keep native controls (file picker, number
-     spinner, scrollbars) on the light palette even when the OS prefers dark. */
+  /* Light-only by design; keep native controls on the light palette. */
   color-scheme: light;
 
-  /* Colour ---------------------------------------------------------------- */
-  --color-canvas: #f6f5f1;
+  /* Colour ----------------------------------------------------------------- */
+  --color-canvas: #f3f4f4;
   --color-surface: #ffffff;
-  --color-surface-muted: #f1efea;
-  --color-text: #1b1a18;
-  --color-text-muted: #57534b;
-  --color-accent: #1d4e89;
-  --color-accent-strong: #163c6b;
-  --color-accent-soft: #e8eef7;
+  --color-text: #2c2c2c;
+  --color-accent: #612d53;
+  --color-accent-secondary: #853953;
   --color-on-accent: #ffffff;
-  --color-danger: #8a1c1c;
-  --color-danger-soft: #fbecec;
-  --color-border: #d8d4cb;
-  --color-border-strong: #8f887a;
-  --color-focus: #1d4e89;
 
-  /* Type ------------------------------------------------------------------ */
-  /* System stacks only: no font package, nothing downloaded at runtime. */
+  /* Derived surfaces and tints (decorative, all mixed with white). */
+  --color-surface-muted: color-mix(in srgb, #f3f4f4 72%, #ffffff);
+  --color-accent-soft: color-mix(in srgb, var(--color-accent-secondary) 10%, #ffffff);
+  --color-accent-tint: color-mix(in srgb, var(--color-accent-secondary) 8%, #ffffff);
+  --color-accent-tint-2: color-mix(in srgb, var(--color-accent) 6%, #ffffff);
+  --color-accent-strong: color-mix(in srgb, var(--color-accent) 82%, var(--color-text));
+  --color-text-muted: color-mix(in srgb, var(--color-text) 70%, #ffffff);
+  --color-danger: var(--color-accent-secondary);
+  --color-danger-soft: color-mix(in srgb, var(--color-accent-secondary) 10%, #ffffff);
+  --color-border: color-mix(in srgb, var(--color-text) 10%, #ffffff);
+  --color-border-strong: color-mix(in srgb, var(--color-text) 60%, #ffffff);
+  --color-focus: var(--color-accent);
+
+  /* Type ------------------------------------------------------------------- */
+  /* The existing system stack: one sans family, nothing downloaded. */
   --font-sans:
     "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-mono:
     ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
 
-  --text-xs: 0.75rem; /* 12px: badges, metadata */
-  --text-sm: 0.875rem; /* 14px: captions, hints */
-  --text-md: 1rem; /* 16px: body */
-  --text-lg: 1.125rem; /* 18px: answer body, card titles */
-  --text-xl: 1.375rem; /* 22px: section headings */
-  --text-2xl: 1.75rem; /* 28px: page headings */
-  --text-3xl: 2.125rem; /* 34px: product heading */
-  /* Metric values are the product's differentiator: large, monospace, and
-     never narrower than 24px so they stay legible at 360px. */
-  --text-metric: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem);
+  --text-xs: 0.75rem; /* 12px: meta, tags, badges */
+  --text-sm: 0.8125rem; /* 13px: secondary body */
+  --text-md: 0.875rem; /* 14px: body */
+  --text-lg: 1rem; /* 16px: card titles */
+  --text-xl: 1.1875rem; /* 19px: section headings */
+  --text-2xl: 1.5rem; /* 24px: page headings */
+  --text-3xl: 1.75rem; /* 28px: the product name (visually hidden) */
+  --text-hero: 1.375rem; /* 22px: hero headline */
+  --text-card: var(--text-lg);
+  --text-section: var(--text-xl);
+  /* Metric values are the largest thing on the page. */
+  --text-metric: clamp(1.75rem, 1.35rem + 1.2vw, 2.5rem);
 
   --leading-tight: 1.2;
   --leading-snug: 1.4;
@@ -87,7 +104,7 @@
 
   --measure: 68ch;
 
-  /* Spacing rhythm: a single 4px-derived step set, used everywhere -------- */
+  /* Spacing rhythm: one 4px-derived step set, used everywhere ---------------- */
   --space-1: 0.25rem; /* 4px */
   --space-2: 0.5rem; /* 8px */
   --space-3: 0.75rem; /* 12px */
@@ -97,19 +114,29 @@
   --space-7: 3rem; /* 48px */
   --space-8: 4rem; /* 64px */
 
-  /* Radius ---------------------------------------------------------------- */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Radius ----------------------------------------------------------------- */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-card: 1rem; /* 16px: document and side cards */
+  --radius-card-lg: 1.25rem; /* 20px: hero banner */
+  --radius-frame: 1.75rem; /* 28px: the inset panel */
+  --radius-rail: 0.625rem; /* 10px: the active rail square */
+  --radius-pill: 999px;
 
-  /* Focus ring: always visible, never removed without a replacement. ------ */
+  /* Exactly one soft shadow layer, on the frame only. ---------------------- */
+  --shadow-frame: 0 18px 40px -24px rgba(44, 44, 44, 0.28);
+
+  /* Focus ring: always visible, never removed without a replacement. -------- */
   --focus-ring-width: 3px;
   --focus-ring-offset: 2px;
 
-  /* Layout ---------------------------------------------------------------- */
-  --content-max: 72rem;
-  --tap-target: 2.75rem; /* 44px minimum interactive height */
+  /* Layout ----------------------------------------------------------------- */
+  --content-max: 80rem;
+  --rail-width: 4.5rem; /* 72px */
+  --grid-gap: 1.5rem; /* 24px */
+  --tap-target: 2.5rem; /* 40px */
 
-  /* Motion: one 120ms colour fade, only when motion is welcome. ----------- */
+  /* Motion: one colour fade, only when motion is welcome. ------------------ */
   --transition-fast: 120ms ease-out;
 }

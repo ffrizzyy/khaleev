@@ -1,46 +1,16 @@
 /**
- * The app shell: one shared layout plus the three SPEC routes.
+ * The route table and the shared R1 shell (T23).
  *
- * The page bodies are filled by their feature slices: T11 `/` (Library), T12
- * `/chat` (Chat) and T18 `/evals` (EvalDashboard); the layout and URLs stay
- * untouched.
+ * `AppShell` owns the frame, the icon rail, the top bar and the content area;
+ * each route fills that content area. URLs and page components are unchanged.
  */
 
-import { NavLink, Outlet, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
+import { AppShell } from "./components/AppShell";
 import { Chat } from "./pages/Chat";
 import { EvalDashboard } from "./pages/EvalDashboard";
 import { Library } from "./pages/Library";
-
-/** Shared chrome: product heading, the promise, and primary navigation. */
-function AppLayout() {
-  return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="app-header__identity">
-          <h1 className="app-title">Khaleev</h1>
-          <p className="app-tagline">
-            Local-first document Q&amp;A with page-cited answers and evaluation metrics.
-          </p>
-        </div>
-        <nav className="app-nav" aria-label="Primary">
-          <NavLink className="app-nav__link" to="/" end>
-            Library
-          </NavLink>
-          <NavLink className="app-nav__link" to="/chat">
-            Chat
-          </NavLink>
-          <NavLink className="app-nav__link" to="/evals">
-            Eval dashboard
-          </NavLink>
-        </nav>
-      </header>
-      <main className="app-main">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
 
 /** The catch-all for unknown addresses. */
 function NotFound() {
@@ -58,7 +28,7 @@ function NotFound() {
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<AppLayout />}>
+      <Route path="/" element={<AppShell />}>
         <Route index element={<Library />} />
         <Route path="chat" element={<Chat />} />
         <Route path="evals" element={<EvalDashboard />} />

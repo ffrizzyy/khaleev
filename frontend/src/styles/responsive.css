@@ -1,8 +1,10 @@
 /**
- * Responsive layer. Mobile-first: the defaults are the 360px layout, and the
- * two breakpoints below widen it. Nothing here sets a body height or hides
- * overflow, so the page always scrolls naturally and never sideways: wide
- * content reflows, wraps or gets its own contained scroll area instead.
+ * Responsive layer (T23). Mobile-first: the defaults in `base.css` and
+ * `components.css` are the 360px layout, and the two breakpoints below widen it.
+ *
+ * Nothing here sets a page height or hides overflow, so the page always scrolls
+ * naturally and never sideways: wide content reflows, wraps or gets its own
+ * contained scroll area instead.
  */
 
 /* Small screens: 360px --------------------------------------------------- */
@@ -12,16 +14,20 @@
     gap: var(--space-4);
   }
 
+  .hero {
+    padding: var(--space-4);
+  }
+
+  .hero__art {
+    justify-self: start;
+  }
+
   .panel {
     padding: var(--space-4);
   }
 
   .panel--latest {
     padding-inline: var(--space-4);
-  }
-
-  .doc-item {
-    padding: var(--space-3);
   }
 
   .page-viewer {
@@ -33,30 +39,74 @@
   }
 
   /* Actions take the full row so each one is an easy 44px tap. */
-  .doc-item__actions > .button {
+  .doc-card__action {
     flex: 1 1 100%;
+  }
+
+  .run-summary__footer {
+    justify-content: flex-start;
   }
 }
 
 /* Tablet and up: 768px --------------------------------------------------- */
 
 @media (min-width: 48rem) {
-  .app-header {
+  /*
+   * The R1 frame: the rail becomes a ~72px full-height column on the far left
+   * and the content area sits beside it. Below this width the rail is the
+   * horizontal strip defined in `base.css`.
+   */
+  .app-frame {
     flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: var(--space-6);
+    align-items: stretch;
+    margin: var(--space-5); /* ~24px inset from the viewport edges */
   }
 
-  .app-nav {
-    justify-content: flex-end;
-    flex-shrink: 0;
+  .rail {
+    flex: 0 0 var(--rail-width);
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-2) var(--space-4);
   }
 
-  .doc-item__actions > .button {
-    flex: 0 1 auto;
+  .rail__links {
+    flex-direction: column;
+    gap: var(--space-2);
   }
 
+  .app-body {
+    flex: 1 1 auto;
+  }
+
+  .topbar {
+    padding: var(--space-5) var(--space-5) var(--space-2);
+  }
+
+  .app-main {
+    padding: var(--space-2) var(--space-5) var(--space-7);
+  }
+
+  .hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--space-6) var(--space-5);
+  }
+
+  /* The art keeps the R1 proportion inside the narrower 768px content area. */
+  .hero__art {
+    max-width: 11rem;
+  }
+
+  /* Document cards two across, and the two-across row side by side. */
+  .doc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .glance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Continuing pages (Chat, Eval dashboard). */
   .confirm > .button {
     width: auto;
     justify-self: start;
@@ -79,13 +129,22 @@
 /* Desktop and up: 1280px ------------------------------------------------- */
 
 @media (min-width: 80rem) {
-  .app-main {
-    padding-inline: var(--space-5);
-    padding-block-start: var(--space-6);
+  /* The R1 two-column main grid: left ~65%, right ~35%, ~24px gap. */
+  .library-grid {
+    grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
   }
 
-  .app-header {
-    padding-inline: var(--space-5);
+  /* The document cards are three across once the left column is wide enough. */
+  .doc-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .topbar {
+    padding-inline: var(--space-6);
+  }
+
+  .app-main {
+    padding-inline: var(--space-6);
   }
 
   .page {

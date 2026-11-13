@@ -1,8 +1,9 @@
 /**
- * Base layer: reset, global typography, the app shell and shared controls.
+ * Base layer: reset, global typography, the R1 frame/rail/top bar and the
+ * shared controls (T23).
  *
- * The shell is a normal document flow: no fixed height and no `100vh`, so the
- * page scrolls naturally and the header is never trapped in a viewport box.
+ * The frame is normal document flow: no fixed height and no `100vh`, so the
+ * page scrolls naturally and the rail always spans the panel it is in.
  */
 
 *,
@@ -25,7 +26,22 @@ body {
   line-height: var(--leading-normal);
 }
 
-/* Headings come from the shared type scale; levels are unchanged (h1–h5). */
+/* Kept in the accessibility tree and focusable; used for the product name and
+   the labels of visually replaced controls. Never `display: none`. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Headings come from the shared scale; levels are unchanged (h1–h6). */
 h1,
 h2,
 h3,
@@ -50,11 +66,11 @@ h2 {
 }
 
 h3 {
-  font-size: var(--text-xl);
+  font-size: var(--text-section);
 }
 
 h4 {
-  font-size: var(--text-lg);
+  font-size: var(--text-card);
 }
 
 h5 {
@@ -85,6 +101,7 @@ time {
 code {
   font-family: var(--font-mono);
   font-size: 0.875em;
+  overflow-wrap: anywhere;
 }
 
 strong {
@@ -105,91 +122,208 @@ a:hover {
 
 /*
  * One focus treatment for every interactive element, including the page viewer
- * (`[tabindex]`), which takes focus programmatically when it opens. There is no
- * `outline: none` anywhere in this stylesheet.
+ * (`[tabindex]`), which takes focus programmatically when it opens. The single
+ * exception is the top-bar search input: its ring is drawn on the pill wrapper
+ * (`.search:focus-within`) instead of on the bare input, so the field reads as
+ * one pill. That replacement is visible and uses the same tokens.
  */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
-  border-radius: var(--radius-sm);
 }
 
-/* App shell -------------------------------------------------------------- */
+/* The R1 frame ------------------------------------------------------------ */
 
-.app-shell {
+.app-frame {
+  position: relative;
   display: flex;
   flex-direction: column;
-  padding-block: var(--space-5) var(--space-8);
+  min-width: 0;
+  margin: var(--space-4);
+  border-radius: var(--radius-frame);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-frame);
+  overflow: hidden;
 }
 
-.app-header {
+/* The rail: a horizontal strip at small widths, a ~72px column above 768px. */
+.rail {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  max-width: var(--content-max);
-  margin-inline: auto;
-  padding-inline: var(--space-4);
-  padding-block-end: var(--space-5);
-  border-block-end: 1px solid var(--color-border);
-}
-
-.app-header__identity {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.app-title {
-  font-size: var(--text-3xl);
-}
-
-.app-tagline {
-  max-width: var(--measure);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.app-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.app-nav__link {
-  display: inline-flex;
+  flex-direction: row;
+  flex: 0 0 auto;
   align-items: center;
-  min-height: var(--tap-target);
-  padding-inline: var(--space-3);
-  border-block-end: 2px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.rail__brand {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  color: var(--color-accent);
+}
+
+.rail__brand-glyph {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.rail__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rail__link {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: var(--radius-rail);
+  color: var(--color-text);
   text-decoration: none;
 }
 
-.app-nav__link:hover {
-  background-color: var(--color-surface-muted);
+.rail__link:hover {
+  background-color: var(--color-accent-tint);
   color: var(--color-accent);
-  text-decoration: none;
 }
 
 /*
- * The current route is cued by three things, not hue alone: the accent text,
- * the 2px underline, and the tinted background.
+ * The active destination changes shape as well as colour: a filled rounded
+ * square with a white glyph, while the inactive entries are glyph-only. Hue is
+ * never the only signal (WCAG 1.4.1).
  */
-.app-nav__link[aria-current="page"] {
-  border-block-end-color: var(--color-accent);
+.rail__link[aria-current="page"] {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.rail__link[aria-current="page"]:hover {
+  background-color: var(--color-accent-strong);
+  color: var(--color-on-accent);
+}
+
+.app-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Top bar ---------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.search {
+  display: flex;
+  flex: 1 1 8rem;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  max-width: 40rem;
+  height: 2.75rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-accent-tint);
+}
+
+/* The pill is the visible field; ring it when its input has focus. */
+.search:focus-within {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.search__icon {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-text-muted);
+}
+
+.search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-md);
+}
+
+.search__input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+/* The ring is on the wrapper above (visible, same tokens); drawing a second
+   ring on the bare input would nest two pills inside each other. */
+.search__input:focus-visible {
+  outline: none;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  background-color: var(--color-accent-tint);
+  color: var(--color-text);
+}
+
+.icon-button:hover {
+  border-color: var(--color-accent);
   background-color: var(--color-accent-soft);
   color: var(--color-accent);
 }
 
+.icon-button svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: 50%;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.avatar svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .app-main {
-  width: 100%;
-  max-width: var(--content-max);
-  margin-inline: auto;
-  padding-inline: var(--space-4);
-  padding-block-start: var(--space-5);
+  min-width: 0;
+  padding: var(--space-2) var(--space-4) var(--space-6);
 }
 
 /* Shared controls -------------------------------------------------------- */
@@ -198,10 +332,11 @@ a:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-1);
   min-height: var(--tap-target);
   padding: var(--space-2) var(--space-4);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background-color: var(--color-surface);
   color: var(--color-text);
   font: inherit;
@@ -212,11 +347,12 @@ a:hover {
 }
 
 .button:hover:not(:disabled) {
-  background-color: var(--color-surface-muted);
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-tint);
 }
 
 .button:disabled {
-  border-color: var(--color-border-strong);
+  border-color: var(--color-border);
   background-color: var(--color-surface-muted);
   color: var(--color-text-muted);
   cursor: not-allowed;
@@ -241,12 +377,13 @@ a:hover {
 
 .button--danger {
   border-color: var(--color-danger);
+  background-color: var(--color-surface);
   color: var(--color-danger);
 }
 
 .button--danger:hover:not(:disabled) {
   background-color: var(--color-danger);
-  color: var(--color-surface);
+  color: var(--color-on-accent);
 }
 
 .field__label {
@@ -264,7 +401,7 @@ a:hover {
   min-height: var(--tap-target);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background-color: var(--color-surface);
   color: var(--color-text);
   font: inherit;
@@ -274,27 +411,6 @@ a:hover {
   max-width: 7rem;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-}
-
-.field__file {
-  font-size: var(--text-sm);
-  background-color: var(--color-surface-muted);
-  border-style: dashed;
-  cursor: pointer;
-}
-
-.field__file::file-selector-button {
-  min-height: 2rem;
-  margin-inline-end: var(--space-3);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-accent);
-  color: var(--color-on-accent);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .field__hint {
@@ -349,11 +465,31 @@ a:hover {
   font-size: var(--text-sm);
 }
 
+.muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.text-link__icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Motion: only when the reader has not asked for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .button,
-  .app-nav__link,
-  .citation__chip,
+  .rail__link,
+  .icon-button,
+  .text-link,
   a {
     transition:
       background-color var(--transition-fast),

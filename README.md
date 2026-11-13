@@ -530,27 +530,43 @@ Frontend development-only (`devDependencies`): `vite`, `@vitejs/plugin-react`, `
 
 The UI is styled with **hand-written CSS and no CSS framework**: no Tailwind, no component
 library, no CSS-in-JS runtime and no preprocessor, so `frontend/package.json` is untouched by
-styling work.
+styling work. The visual system is the R1 layout (`SPEC.md` → `## References → R1`) on the R2
+palette — `#F3F4F4` canvas, `#FFFFFF` cards, `#2C2C2C` ink and dark pills, `#612D53` primary accent,
+`#853953` secondary accent — locked by SPEC's locked intent 14–16. It supersedes the earlier T21
+palette and direction.
 
 | File | Role |
 | --- | --- |
-| `frontend/src/styles/tokens.css` | Design tokens: colour, type scale, spacing steps, radius, focus ring. Its header comment records the measured WCAG contrast ratio of every text/background pair used in the UI. |
-| `frontend/src/styles/base.css` | Reset, global typography, the app shell (header, primary navigation, main) and shared controls (buttons, fields, alerts). |
-| `frontend/src/styles/components.css` | Library, Chat, citation chips, page viewer, eval dashboard, run cards and the golden set. |
-| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints. |
+| `frontend/src/styles/tokens.css` | Design tokens: the R2 palette, type scale, spacing steps, radius, the single focus ring and the one soft frame shadow. Its header comment records R2's four measured WCAG ratios verbatim, the measured ratio of every further text/background pair the UI introduces, and the floors (body text ≥ 4.5:1, interactive boundaries ≥ 3:1). |
+| `frontend/src/styles/base.css` | Reset, global typography, the R1 frame — inset rounded panel, icon rail, pill-search top bar — and the shared controls (dark pill CTA, buttons, fields, alerts). |
+| `frontend/src/styles/components.css` | The Library page in R1's anatomy: hero banner, section heading rows, three-across document cards, the golden-set/document-detail row, the eval summary card and the stacked run cards. Chat, citation chips, page viewer, eval dashboard, run cards and the golden set live here too. |
+| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints; at 360px the rail is a horizontal strip and everything is one column, at 768px the rail becomes the ~72px column, and at 1280px the main area is the R1 65/35 two-column grid. |
 
 All four are imported exactly once, in `frontend/src/main.tsx`; no component imports CSS of its
 own, and Vite emits them as a single stylesheet at build time. Highlights:
 
-- One light theme and one accent colour. Body text measures 15.9:1 on the page canvas and secondary
-  text at least 6.6:1 on the surfaces it is used on (WCAG 2.1 AA requires 4.5:1 for body text).
-- A visible `:focus-visible` ring (3px, 2px offset) on every link, button, form control and the page
-  viewer; no rule in the stylesheet sets `outline: none`.
-- Citation chips stay real `<button>`s and read as discrete page references; the two eval metrics
+- One light theme and exactly the R2 palette. `#2C2C2C` ink measures 12.7:1 on the `#F3F4F4` canvas
+  and 13.6:1 on a `#FFFFFF` card; white on `#612D53` measures 10.5:1 and on `#853953` 7.8:1
+  (WCAG 2.1 AA requires 4.5:1 for body text). Pale tints are accent mixed with white and are
+  decorative only.
+- A visible `:focus-visible` ring (3px, primary accent, 2px offset) on every link, button, form
+  control, citation chip and the page viewer. The single `outline: none` in the stylesheet is the
+  top-bar search input, whose ring is drawn on the pill wrapper instead, so the field reads as one
+  pill rather than two nested ones.
+- The active rail item is a filled rounded square with a white glyph, so the active route is a
+  shape change as well as a colour change; the two top-bar icon links are real destinations and
+  the avatar is inert, decorative chrome (there is no user record and no auth).
+- Citation chips stay real `<button>`s and read as discrete page references; the eval metric values
   are set in monospace at the top of the type scale.
-- A flagged (non-comparable) run is marked by a thicker rule, a bordered block and the words
-  "Not comparable", not by colour alone.
-- Tap targets are at least 44px tall, and no page scrolls horizontally at 360px, 768px or 1280px.
+- A flagged (non-comparable) run is marked by a bordered block and the words "Not comparable", not
+  by colour alone.
+- Tap targets are at least 40px tall, focusable controls and long text wrap (`overflow-wrap:
+  anywhere`), and no page scrolls horizontally at 360px, 768px or 1280px. Motion is only a colour
+  fade and only under `prefers-reduced-motion: no-preference`.
+
+The same frame, rail, top bar and card language is carried onto the Chat page and the Eval dashboard
+by T24; the behaviour locked by SPEC comes first, so every role, label, string and request on those
+pages stays exactly as the test suite asserts it.
 
 ## Known gaps
 

@@ -2,6 +2,12 @@
  * PDF upload control (F1): a labelled file input that posts multipart to
  * `/api/documents` and reports every outcome in one live region.
  *
+ * T23 moves the control into the Library hero. The heading is now the CTA
+ * caption and the label is the dark pill; the native input is still a real,
+ * focusable, labelled control (visually hidden, never `display: none`), so
+ * `getByLabelText("Upload PDF")` and `user.upload` keep working. The visible
+ * focus ring is drawn on the pill by `:focus-within`.
+ *
  * The backend dedupes by content hash and answers a repeated file with the
  * *existing* document (200 instead of 201). That distinction is not exposed by
  * the typed client, so the control compares the returned id with the documents
@@ -105,27 +111,25 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
   }
 
   return (
-    <section
-      className="panel panel--upload"
-      aria-labelledby={`${inputId}-heading`}
-      aria-busy={uploading}
-    >
-      <h3 className="panel__title" id={`${inputId}-heading`}>
+    <section className="upload" aria-labelledby={`${inputId}-heading`} aria-busy={uploading}>
+      <h3 className="upload__caption" id={`${inputId}-heading`}>
         Upload a PDF
       </h3>
-      <label className="field__label" htmlFor={inputId}>
-        Upload PDF
-      </label>
-      <input
-        className="field__file"
-        id={inputId}
-        type="file"
-        accept="application/pdf,.pdf"
-        aria-describedby={descriptionId}
-        disabled={uploading}
-        onChange={handleChange}
-      />
-      <p className="field__hint" id={descriptionId}>
+      <div className="upload__cta">
+        <label className="button upload__pill" htmlFor={inputId}>
+          Upload PDF
+        </label>
+        <input
+          className="upload__input visually-hidden"
+          id={inputId}
+          type="file"
+          accept="application/pdf,.pdf"
+          aria-describedby={descriptionId}
+          disabled={uploading}
+          onChange={handleChange}
+        />
+      </div>
+      <p className="upload__hint" id={descriptionId}>
         Pick a PDF from your machine. It is stored locally.
       </p>
       {status.kind !== "idle" ? (
