@@ -1,8 +1,8 @@
 /**
- * The route table and the shared R1 shell (T23).
+ * The route table and the shared R1 shell (T23, top bar removed by T25).
  *
- * `AppShell` owns the frame, the icon rail, the top bar and the content area;
- * each route fills that content area. URLs and page components are unchanged.
+ * `AppShell` owns the frame, the icon rail and the content area; each route
+ * fills that content area. URLs and page components are unchanged.
  */
 
 import { Route, Routes } from "react-router-dom";

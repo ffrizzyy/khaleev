@@ -1,10 +1,12 @@
 /**
- * The top-bar search query (T23).
+ * The document-search query (T23, relocated by T25).
  *
  * SPEC's API surface has no search endpoint, so the search is a purely local
- * filter over the document list the Library already holds. The value lives in
- * app state so the field mounted in the shell survives navigation: type on
- * Chat, come back to the Library, and the same query still applies.
+ * filter over the document list the Library already holds. The field itself
+ * lives in the Library's "Your documents" section header — not in the shell,
+ * because locked intent 17 removed the top bar — but its value still lives in
+ * app state, so it survives a remount of the page (navigate away and back, and
+ * the same query still applies).
  *
  * The store mirrors `selectedDocument.ts`: a module-level value plus
  * `useSyncExternalStore`, no provider and no new dependency, and the value is

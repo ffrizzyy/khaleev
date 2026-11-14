@@ -80,16 +80,6 @@ export function SearchIcon({ className }: IconProps): ReactElement {
   );
 }
 
-/** The inert top-bar avatar: a generic person, not a user record. */
-export function UserIcon({ className }: IconProps): ReactElement {
-  return (
-    <svg {...base} className={className}>
-      <circle cx="12" cy="9" r="3.5" />
-      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" />
-    </svg>
-  );
-}
-
 /** A document page, used by each library card's icon chip. */
 export function DocumentIcon({ className }: IconProps): ReactElement {
   return (
@@ -98,30 +88,6 @@ export function DocumentIcon({ className }: IconProps): ReactElement {
       <path d="M13.5 3.5V8h5" />
       <path d="M10 12h5" />
       <path d="M10 15.5h5" />
-    </svg>
-  );
-}
-
-/** Golden set: a checked list. */
-export function GoldenIcon({ className }: IconProps): ReactElement {
-  return (
-    <svg {...base} className={className}>
-      <path d="m4.5 7.5 1.5 1.5 3-3" />
-      <path d="m4.5 14 1.5 1.5 3-3" />
-      <path d="M12.5 7.5H20" />
-      <path d="M12.5 14H20" />
-      <path d="M12.5 20H20" />
-    </svg>
-  );
-}
-
-/** Document detail: an information mark. */
-export function DetailIcon({ className }: IconProps): ReactElement {
-  return (
-    <svg {...base} className={className}>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 11v5.5" />
-      <path d="M12 7.5h.01" />
     </svg>
   );
 }

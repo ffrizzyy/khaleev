@@ -2,11 +2,13 @@
  * PDF upload control (F1): a labelled file input that posts multipart to
  * `/api/documents` and reports every outcome in one live region.
  *
- * T23 moves the control into the Library hero. The heading is now the CTA
- * caption and the label is the dark pill; the native input is still a real,
- * focusable, labelled control (visually hidden, never `display: none`), so
- * `getByLabelText("Upload PDF")` and `user.upload` keep working. The visible
- * focus ring is drawn on the pill by `:focus-within`.
+ * The control is the Library hero's single action: the label is the dark pill;
+ * the native input is still a real, focusable, labelled control (visually
+ * hidden, never `display: none`), so `getByLabelText("Upload PDF")` and
+ * `user.upload` keep working. The visible focus ring is drawn on the pill by
+ * `:focus-within`. T25 removed the redundant "Upload a PDF" eyebrow and the
+ * helper sentence, and with them the `aria-labelledby`/`aria-describedby`
+ * idrefs that pointed at those two deleted elements.
  *
  * The backend dedupes by content hash and answers a repeated file with the
  * *existing* document (200 instead of 201). That distinction is not exposed by
@@ -72,7 +74,6 @@ function statusMessage(status: UploadStatus): string {
 
 export function Upload({ existingDocuments = [], onUploaded }: UploadProps): ReactElement {
   const inputId = useId();
-  const descriptionId = useId();
   const [status, setStatus] = useState<UploadStatus>({ kind: "idle" });
   const uploading = status.kind === "uploading";
 
@@ -111,10 +112,7 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
   }
 
   return (
-    <section className="upload" aria-labelledby={`${inputId}-heading`} aria-busy={uploading}>
-      <h3 className="upload__caption" id={`${inputId}-heading`}>
-        Upload a PDF
-      </h3>
+    <section className="upload" aria-busy={uploading}>
       <div className="upload__cta">
         <label className="button upload__pill" htmlFor={inputId}>
           Upload PDF
@@ -124,14 +122,10 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
           id={inputId}
           type="file"
           accept="application/pdf,.pdf"
-          aria-describedby={descriptionId}
           disabled={uploading}
           onChange={handleChange}
         />
       </div>
-      <p className="upload__hint" id={descriptionId}>
-        Pick a PDF from your machine. It is stored locally.
-      </p>
       {status.kind !== "idle" ? (
         <p
           className={status.kind === "error" ? "status status--error" : "status status--success"}

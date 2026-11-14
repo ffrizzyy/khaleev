@@ -18,10 +18,6 @@
     padding: var(--space-4);
   }
 
-  .hero__art {
-    justify-self: start;
-  }
-
   .panel {
     padding: var(--space-4);
   }
@@ -51,12 +47,19 @@
     flex: 1 1 100%;
   }
 
-  .run-summary__footer {
-    justify-content: flex-start;
-  }
-
   .run-card__footer {
     justify-content: flex-start;
+  }
+}
+
+/*
+ * Phones: the search field takes its own row in the "Your documents" header, so
+ * the typed value is never clipped against the section title.
+ */
+@media (max-width: 29.99rem) {
+  .search {
+    flex-basis: 100%;
+    max-width: none;
   }
 }
 
@@ -87,34 +90,16 @@
     gap: var(--space-2);
   }
 
-  .app-body {
-    flex: 1 1 auto;
-  }
-
-  .topbar {
-    padding: var(--space-5) var(--space-5) var(--space-2);
-  }
-
   .app-main {
     padding: var(--space-2) var(--space-5) var(--space-7);
   }
 
   .hero {
-    grid-template-columns: minmax(0, 1fr) auto;
     padding: var(--space-6) var(--space-5);
   }
 
-  /* The art keeps the R1 proportion inside the narrower 768px content area. */
-  .hero__art {
-    max-width: 11rem;
-  }
-
-  /* Document cards two across, and the two-across row side by side. */
+  /* Document cards two across. */
   .doc-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .glance-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -142,18 +127,13 @@
 
 @media (min-width: 80rem) {
   /* The R1 two-column main grid: left ~65%, right ~35%, ~24px gap. */
-  .library-grid,
   .page-grid--two {
     grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
   }
 
-  /* The document cards are three across once the left column is wide enough. */
+  /* The document cards are three across, now across the landing's full width. */
   .doc-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .topbar {
-    padding-inline: var(--space-6);
   }
 
   .app-main {

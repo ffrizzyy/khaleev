@@ -1,38 +1,26 @@
 /**
- * The R1 app shell (T23): tinted canvas, one inset rounded panel, an icon rail,
- * the pill-search top bar and the content area.
+ * The R1 app shell: tinted canvas, one inset rounded panel, the icon rail and
+ * the content area.
  *
- * Layout only — the product's own destinations fill the rail and the top bar:
+ * The top bar (pill search, the two circular icon links and the avatar) is
+ * deliberately absent: locked intent 17 and the "Deviation from R1" note in
+ * `SPEC.md` removed it, and no later task may restore it "for fidelity".
+ *
+ * Layout only — the product's own destinations fill the rail:
  *
  * * the rail is the `Primary` navigation landmark with the three real routes,
  *   icon-only (`aria-label`) so it stays keyboard-reachable and announced as
  *   links, and `NavLink` supplies `aria-current="page"` on the active route;
  * * the product name survives as a visually hidden `<h1>` because R1 forbids
- *   visible rail labels but the document still needs exactly one top heading;
- * * the top-bar icon buttons are links to real destinations, deliberately named
- *   "Go to Library" / "Go to the Eval dashboard" so they never collide with the
- *   rail's exact names, and the avatar is inert, decorative chrome.
- *
- * The search field is a real labelled `<input type="search">`. SPEC has no
- * search endpoint, so it only writes shared client state; the Library filters
- * its already-loaded list from that value.
+ *   visible rail labels but the document still needs exactly one top heading.
  */
 
-import { useId } from "react";
-import type { ChangeEvent, ReactElement } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import type { ReactElement } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 
-import { setSearchQuery, useSearchQuery } from "../state/searchQuery";
-import { BrandMark, ChatIcon, EvalIcon, LibraryIcon, SearchIcon, UserIcon } from "./Icons";
+import { BrandMark, ChatIcon, EvalIcon, LibraryIcon } from "./Icons";
 
 export function AppShell(): ReactElement {
-  const searchId = useId();
-  const query = useSearchQuery();
-
-  function handleSearchChange(event: ChangeEvent<HTMLInputElement>): void {
-    setSearchQuery(event.currentTarget.value);
-  }
-
   return (
     <div className="app-frame">
       <h1 className="visually-hidden">Khaleev</h1>
@@ -59,45 +47,9 @@ export function AppShell(): ReactElement {
         </div>
       </nav>
 
-      <div className="app-body">
-        <header className="topbar">
-          <div className="search">
-            <SearchIcon className="search__icon" />
-            <label className="visually-hidden" htmlFor={searchId}>
-              Search documents
-            </label>
-            <input
-              className="search__input"
-              id={searchId}
-              type="search"
-              placeholder="Search documents"
-              autoComplete="off"
-              value={query}
-              onChange={handleSearchChange}
-            />
-          </div>
-          <div className="topbar__actions">
-            <Link className="icon-button" to="/" aria-label="Go to Library" title="Go to Library">
-              <LibraryIcon />
-            </Link>
-            <Link
-              className="icon-button"
-              to="/evals"
-              aria-label="Go to the Eval dashboard"
-              title="Go to the Eval dashboard"
-            >
-              <EvalIcon />
-            </Link>
-            <span className="avatar" aria-hidden="true">
-              <UserIcon />
-            </span>
-          </div>
-        </header>
-
-        <main className="app-main">
-          <Outlet />
-        </main>
-      </div>
+      <main className="app-main">
+        <Outlet />
+      </main>
     </div>
   );
 }

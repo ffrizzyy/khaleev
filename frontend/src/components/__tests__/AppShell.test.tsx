@@ -1,10 +1,20 @@
+/**
+ * The shell after T25: the inset panel, the Primary icon rail and the content
+ * area. The top bar (pill search, the two circular icon links, the avatar) is
+ * removed by locked intent 17, so these tests assert the rail's exact contract
+ * and that nothing top-bar-shaped remains.
+ *
+ * Structure, roles and text only — never a class name. The search field lives
+ * on the Library page now, so its behaviour is covered by
+ * `pages/__tests__/Library.minimal.test.tsx`.
+ */
+
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../../App";
-import { clearSelectedDocument } from "../../state/selectedDocument";
-import { setSearchQuery } from "../../state/searchQuery";
+import { AppShell } from "../AppShell";
 import type { Document } from "../../types";
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -23,13 +33,6 @@ const paper: Document = {
   created_at: "2026-02-03T10:15:00Z",
 };
 
-const other: Document = {
-  id: 2,
-  title: "Other.pdf",
-  page_count: 1,
-  created_at: "2026-03-04T08:00:00Z",
-};
-
 /** The library list is the only endpoint the shell + Library need here. */
 function installLibraryApi(documents: readonly Document[]) {
   fetchMock.mockImplementation(async (input, init) => {
@@ -45,9 +48,6 @@ function installLibraryApi(documents: readonly Document[]) {
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
-  clearSelectedDocument();
-  setSearchQuery("");
-  sessionStorage.clear();
   window.history.pushState({}, "", "/");
 });
 
@@ -70,68 +70,30 @@ describe("AppShell", () => {
       "/evals",
     );
 
-    // The top-bar icon links are real destinations but never reuse the rail names.
-    expect(screen.getByRole("link", { name: "Go to Library" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Go to the Eval dashboard" })).toHaveAttribute(
-      "href",
-      "/evals",
-    );
-
     // The product heading survives, visually hidden, so the page keeps one h1.
     // (Asserted by role, never by class name: tests stay semantic.)
     expect(screen.getByRole("heading", { level: 1, name: "Khaleev" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
-  it("labels the top-bar search field", async () => {
-    installLibraryApi([paper]);
-    render(<App />);
+  it("renders no top bar: no banner, no searchbox and no duplicate icon links", () => {
+    render(
+      <MemoryRouter>
+        <AppShell />
+      </MemoryRouter>,
+    );
 
-    expect(screen.getByRole("searchbox", { name: "Search documents" })).toBeInTheDocument();
-  });
+    // A `<header>` outside a landmark would be a banner; the removed top bar was
+    // one, so its absence is the contract.
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Go to Library" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Go to the Eval dashboard" }),
+    ).not.toBeInTheDocument();
 
-  it("narrows the visible document list as the user types and restores it when cleared", async () => {
-    const user = userEvent.setup();
-    installLibraryApi([paper, other]);
-    render(<App />);
-
-    await screen.findByText("Paper.pdf");
-    expect(screen.getByText("Other.pdf")).toBeInTheDocument();
-
-    const search = screen.getByRole("searchbox", { name: "Search documents" });
-    const requestsBeforeTyping = fetchMock.mock.calls.length;
-
-    await user.type(search, "paper");
-
-    expect(screen.getByText("Paper.pdf")).toBeInTheDocument();
-    expect(screen.queryByText("Other.pdf")).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls.length).toBe(requestsBeforeTyping);
-
-    await user.clear(search);
-
-    expect(await screen.findByText("Other.pdf")).toBeInTheDocument();
-    expect(screen.getByText("Paper.pdf")).toBeInTheDocument();
-    expect(fetchMock.mock.calls.length).toBe(requestsBeforeTyping);
-  });
-
-  it("restores the persisted query when the shell remounts", async () => {
-    const user = userEvent.setup();
-    installLibraryApi([paper, other]);
-    const first = render(<App />);
-
-    await screen.findByText("Paper.pdf");
-    await user.type(screen.getByRole("searchbox", { name: "Search documents" }), "paper");
-
-    const searchbox = screen.getByRole("searchbox", { name: "Search documents" });
-    expect(searchbox).toHaveValue("paper");
-    // The value outlives the component tree in the same tab.
-    expect(sessionStorage.getItem("khaleev.search-query")).toBe(JSON.stringify("paper"));
-
-    first.unmount();
-    render(<App />);
-
-    expect(screen.getByRole("searchbox", { name: "Search documents" })).toHaveValue("paper");
-    expect(await screen.findByText("Paper.pdf")).toBeInTheDocument();
-    expect(screen.queryByText("Other.pdf")).not.toBeInTheDocument();
+    // The rail keeps exactly its three real destinations.
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(nav).getAllByRole("link")).toHaveLength(3);
   });
 });

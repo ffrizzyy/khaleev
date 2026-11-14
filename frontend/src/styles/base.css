@@ -1,6 +1,6 @@
 /**
- * Base layer: reset, global typography, the R1 frame/rail/top bar and the
- * shared controls (T23).
+ * Base layer: reset, global typography, the R1 frame/rail and the shared
+ * controls (T23).
  *
  * The frame is normal document flow: no fixed height and no `100vh`, so the
  * page scrolls naturally and the rail always spans the panel it is in.
@@ -123,7 +123,7 @@ a:hover {
 /*
  * One focus treatment for every interactive element, including the page viewer
  * (`[tabindex]`), which takes focus programmatically when it opens. The single
- * exception is the top-bar search input: its ring is drawn on the pill wrapper
+ * exception is the Library's search input: its ring is drawn on the pill wrapper
  * (`.search:focus-within`) instead of on the bare input, so the field reads as
  * one pill. That replacement is visible and uses the same tokens.
  */
@@ -208,120 +208,8 @@ a:hover {
   color: var(--color-on-accent);
 }
 
-.app-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* Top bar ---------------------------------------------------------------- */
-
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  padding: var(--space-4) var(--space-4) var(--space-2);
-}
-
-.search {
-  display: flex;
-  flex: 1 1 8rem;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  max-width: 40rem;
-  height: 2.75rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-pill);
-  background-color: var(--color-accent-tint);
-}
-
-/* The pill is the visible field; ring it when its input has focus. */
-.search:focus-within {
-  outline: var(--focus-ring-width) solid var(--color-focus);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.search__icon {
-  flex: 0 0 auto;
-  width: 1.125rem;
-  height: 1.125rem;
-  color: var(--color-text-muted);
-}
-
-.search__input {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--text-md);
-}
-
-.search__input::placeholder {
-  color: var(--color-text-muted);
-  opacity: 1;
-}
-
-/* The ring is on the wrapper above (visible, same tokens); drawing a second
-   ring on the bare input would nest two pills inside each other. */
-.search__input:focus-visible {
-  outline: none;
-}
-
-.topbar__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-inline-start: auto;
-}
-
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: var(--tap-target);
-  height: var(--tap-target);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 50%;
-  background-color: var(--color-accent-tint);
-  color: var(--color-text);
-}
-
-.icon-button:hover {
-  border-color: var(--color-accent);
-  background-color: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.icon-button svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-.avatar {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: var(--tap-target);
-  height: var(--tap-target);
-  border-radius: 50%;
-  background-color: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.avatar svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
 .app-main {
+  flex: 1 1 auto;
   min-width: 0;
   padding: var(--space-2) var(--space-4) var(--space-6);
 }
@@ -464,11 +352,6 @@ a:hover {
   font-size: var(--text-sm);
 }
 
-.muted {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -487,7 +370,6 @@ a:hover {
 @media (prefers-reduced-motion: no-preference) {
   .button,
   .rail__link,
-  .icon-button,
   .text-link,
   a {
     transition:

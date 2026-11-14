@@ -538,9 +538,9 @@ palette and direction.
 | File | Role |
 | --- | --- |
 | `frontend/src/styles/tokens.css` | Design tokens: the R2 palette, type scale, spacing steps, radius, the single focus ring and the one soft frame shadow. Its header comment records R2's four measured WCAG ratios verbatim, the measured ratio of every further text/background pair the UI introduces, and the floors (body text ≥ 4.5:1, interactive boundaries ≥ 3:1). |
-| `frontend/src/styles/base.css` | Reset, global typography, the R1 frame — inset rounded panel, icon rail, pill-search top bar — and the shared controls (dark pill CTA, buttons, fields, alerts). |
-| `frontend/src/styles/components.css` | Every page in R1's anatomy: the Library's hero banner, section heading rows, three-across document cards, the golden-set/document-detail row, the eval summary card and the stacked run cards; Chat's document context strip, its three ask cards (question form, answer, citations) and the page-viewer card; the eval dashboard's headline metrics, its stacked run cards and the run form and golden set in the side column. |
-| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints; at 360px the rail is a horizontal strip and everything is one column, at 768px the rail becomes the ~72px column, and at 1280px the main area is the R1 65/35 two-column grid on every page. |
+| `frontend/src/styles/base.css` | Reset, global typography, the R1 frame — inset rounded panel and icon rail — and the shared controls (dark pill CTA, buttons, fields, alerts). |
+| `frontend/src/styles/components.css` | Every page in R1's anatomy: the Library's hero banner, its "Your documents" section header with the search field, and the three-across document cards; Chat's document context strip, its three ask cards (question form, answer, citations) and the page-viewer card; the eval dashboard's headline metrics, its stacked run cards and the run form and golden set in the side column. |
+| `frontend/src/styles/responsive.css` | The 360px, 768px and 1280px layouts: mobile-first defaults plus two widening breakpoints; at 360px the rail is a horizontal strip, everything is one column and the search field takes its own row, at 768px the rail becomes the ~72px column, and at 1280px the two-column grid appears on the pages that still have two columns (the eval dashboard, and Chat with a cited page open). |
 
 All four are imported exactly once, in `frontend/src/main.tsx`; no component imports CSS of its
 own, and Vite emits them as a single stylesheet at build time. Highlights:
@@ -551,11 +551,13 @@ own, and Vite emits them as a single stylesheet at build time. Highlights:
   decorative only.
 - A visible `:focus-visible` ring (3px, primary accent, 2px offset) on every link, button, form
   control, citation chip and the page viewer. The single `outline: none` in the stylesheet is the
-  top-bar search input, whose ring is drawn on the pill wrapper instead, so the field reads as one
+  Library's search input, whose ring is drawn on the pill wrapper instead, so the field reads as one
   pill rather than two nested ones.
 - The active rail item is a filled rounded square with a white glyph, so the active route is a
-  shape change as well as a colour change; the two top-bar icon links are real destinations and
-  the avatar is inert, decorative chrome (there is no user record and no auth).
+  shape change as well as a colour change. The shell is the inset panel, the rail and the page
+  content — locked intent 17 removed the top bar (pill search, two icon links, avatar) and no later
+  task restores it; the search field now lives in the Library's "Your documents" header and appears
+  only once at least one document exists.
 - Citation chips stay real `<button>`s and read as discrete page references; the eval metric values
   are set in monospace at the top of the type scale, so the latest run's two numbers are the largest
   thing on the dashboard, with each history row's own hit rate right-aligned in the same monospace.
@@ -567,13 +569,18 @@ own, and Vite emits them as a single stylesheet at build time. Highlights:
   anywhere`), and no page scrolls horizontally at 360px, 768px or 1280px. Motion is only a colour
   fade and only under `prefers-reduced-motion: no-preference`.
 
-The same frame, rail, top bar and card language now covers all three pages. T23 built the shell and
-the Library page; T24 rebuilt the Chat page (context strip, three ask cards in the left column and
-the page viewer as a card in the right column) and the Eval dashboard (headline metrics and stacked
-run cards on the left, the run form and golden set on the right) on exactly those tokens — one card
-shape, one type scale, one spacing rhythm and one focus ring, with no second palette anywhere. The
-behaviour locked by SPEC comes first, so every role, label, string and request on those pages stays
-exactly as the test suite asserts it.
+The same frame, rail and card language covers all three pages. T23 built the shell and the Library
+page; T24 rebuilt the Chat page (context strip, three ask cards in the left column and the page
+viewer as a card in the right column) and the Eval dashboard (headline metrics and stacked run
+cards on the left, the run form and golden set on the right) on exactly those tokens — one card
+shape, one type scale, one spacing rhythm and one focus ring, with no second palette anywhere.
+**T25** then applied locked intent 17: the top bar, the two-across "Selected document" row and the
+"Latest eval run" card are gone, the shell is panel + rail + content, the Library is a single
+full-width column of hero, Q&A-target banner and document list, its hero is the headline, one
+supporting line and the `Upload PDF` control, and the search field sits in the "Your documents"
+section header (client-side only, and only once a document exists) — so the landing page issues
+exactly one request, `GET /api/documents`. The behaviour locked by SPEC comes first, so every role,
+label, string and request on those pages stays exactly as the test suite asserts it.
 
 ## Known gaps
 

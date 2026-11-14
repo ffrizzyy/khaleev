@@ -18,7 +18,7 @@
  */
 
 import { useState } from "react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { isApiError } from "../api/client";
 import type { Document } from "../types";
@@ -33,6 +33,12 @@ export interface DocumentListProps {
   onDelete: (document: Document) => Promise<void>;
   /** True when the document list has been narrowed by the search field. */
   isFiltered?: boolean;
+  /**
+   * Optional control for the section header, e.g. the Library's search field.
+   * Rendered beside the heading — never inside the list — so the document rows
+   * stay the only list items.
+   */
+  search?: ReactNode;
 }
 
 function pagesLabel(pageCount: number): string {
@@ -60,6 +66,7 @@ export function DocumentList({
   onSelect,
   onDelete,
   isFiltered = false,
+  search,
 }: DocumentListProps): ReactElement {
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -96,6 +103,7 @@ export function DocumentList({
         <h3 className="section-heading__title" id="document-list-heading">
           Your documents
         </h3>
+        {search}
       </div>
       {documents.length === 0 ? (
         <p className="empty-state">
