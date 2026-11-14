@@ -113,4 +113,25 @@ describe("AppShell", () => {
     expect(screen.getByText("Paper.pdf")).toBeInTheDocument();
     expect(fetchMock.mock.calls.length).toBe(requestsBeforeTyping);
   });
+
+  it("restores the persisted query when the shell remounts", async () => {
+    const user = userEvent.setup();
+    installLibraryApi([paper, other]);
+    const first = render(<App />);
+
+    await screen.findByText("Paper.pdf");
+    await user.type(screen.getByRole("searchbox", { name: "Search documents" }), "paper");
+
+    const searchbox = screen.getByRole("searchbox", { name: "Search documents" });
+    expect(searchbox).toHaveValue("paper");
+    // The value outlives the component tree in the same tab.
+    expect(sessionStorage.getItem("khaleev.search-query")).toBe(JSON.stringify("paper"));
+
+    first.unmount();
+    render(<App />);
+
+    expect(screen.getByRole("searchbox", { name: "Search documents" })).toHaveValue("paper");
+    expect(await screen.findByText("Paper.pdf")).toBeInTheDocument();
+    expect(screen.queryByText("Other.pdf")).not.toBeInTheDocument();
+  });
 });

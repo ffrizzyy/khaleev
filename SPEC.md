@@ -59,7 +59,7 @@ Pale tints are produced by mixing an accent with white at low opacity — decora
 
 Measured contrast ratios (WCAG relative-luminance formula; recorded so no later task silently picks something prettier and fails AA):
 - `#2C2C2C` ink on `#F3F4F4` canvas — 12.7:1
-- `#2C2C2C` ink on `#FFFFFF` card — 13.6:1
+- `#2C2C2C` ink on `#FFFFFF` card — 14.0:1
 - `#FFFFFF` on `#612D53` primary — 10.5:1
 - `#FFFFFF` on `#853953` secondary — 7.8:1
 
@@ -220,3 +220,4 @@ khaleev/
 |---|---|---|---|
 | 2026-11-11 | Initial spec created from user statement and interview round | U | Establishes locked intent |
 | 2026-11-13 | Visual redesign adopted: R1 dashboard layout (layout structure only) and R2 palette (`#F3F4F4`/`#853953`/`#612D53`/`#2C2C2C`) added as locked intent items 14–16. Supersedes the T21 visual direction (#1d4e89 accent on #f6f5f1 — not previously recorded in this spec). All functional requirements (citations guarantee, metrics, single-user local scope, offline tests, no-auth boundary) unchanged. | U (R1, R2) | Accepted |
+| 2026-11-14 | Correction: R2 measured contrast ratio for `#2C2C2C` ink on `#FFFFFF` card was 13.6:1; recomputed with the WCAG 2.1 relative-luminance formula it is 13.97:1, rounded to **14.0:1**. Transcription error caught by verification (`frontend/src/styles/tokens.css` already recorded the correct 14.0:1); the other three R2 ratios (12.7:1, 10.5:1, 7.8:1) re-verified unchanged. No change to the palette, the role mapping, the contrast floors, or any requirement or acceptance criterion. | A | Accepted |

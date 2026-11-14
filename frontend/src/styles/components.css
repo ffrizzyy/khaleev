@@ -519,14 +519,11 @@
 }
 
 /*
- * The runs card groups its own heading row above the stacked run cards. It
- * keeps the side column's rhythm and gives its heading the same hairline the
- * other side card draws under its centred label, so the two read as siblings.
+ * The runs card groups its own heading row above the stacked run cards and
+ * gives its heading the same hairline the other side card draws under its
+ * centred label, so the two read as siblings. The card's spacing is the base
+ * `.side-card` gap.
  */
-.side-card--runs {
-  gap: var(--space-3);
-}
-
 .side-card--runs .section-heading {
   padding-block-end: var(--space-2);
   border-block-end: 1px solid var(--color-border);
