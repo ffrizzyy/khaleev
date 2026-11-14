@@ -14,7 +14,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { selectDocument } from "../../state/selectedDocument";
+import { getSelectedDocument, selectDocument } from "../../state/selectedDocument";
 import type { Document } from "../../types";
 import { Library } from "../Library";
 
@@ -206,5 +206,38 @@ describe("Library minimal landing", () => {
 
     await screen.findByText("Paper.pdf");
     expect(screen.getByText(/no document selected for Q&A yet/i)).toBeInTheDocument();
+  });
+
+  it("silently discards a persisted selection that is no longer in the list", async () => {
+    installApi([other]);
+    selectDocument(paper);
+    render(<Library />);
+
+    // The list is authoritative: the vanished id is gone before the banner can
+    // name it, and the page explains nothing — a deleted document is not an error.
+    expect(await screen.findByText("Other.pdf")).toBeInTheDocument();
+    expect(getSelectedDocument()).toBeNull();
+    expect(screen.getByText(/no document selected for Q&A yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/does not exist/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Q&A target:/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("leaves a live selection alone when its document is in the list", async () => {
+    installApi([paper, other]);
+    selectDocument(paper);
+    render(<Library />);
+
+    await screen.findByText("Paper.pdf");
+    expect(getSelectedDocument()?.id).toBe(paper.id);
+    expect(screen.getByText(/Q&A target: Paper\.pdf/)).toBeInTheDocument();
+  });
+
+  it("still reports a genuine failure to load the library", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ detail: "Database unavailable" }, 500));
+    render(<Library />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Could not load the library: Database unavailable");
   });
 });

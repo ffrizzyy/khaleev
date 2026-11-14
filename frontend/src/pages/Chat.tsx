@@ -13,16 +13,22 @@
  * (Locked intent #3 — one selected document per question). The open viewer is
  * stored as the document id plus the page, and rendered only while that id is
  * still the selected document.
+ *
+ * A persisted selection can outlive its document. The page re-checks it on
+ * mount against the list the Library already loaded, so a deleted document
+ * falls straight to the plain empty state instead of a "Questioning {title}"
+ * strip (Locked intent #17, the stale-selection rule). That check reads module
+ * state only and issues no request.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { Link } from "react-router-dom";
 
 import { AskPanel } from "../components/AskPanel";
 import { ArrowIcon } from "../components/Icons";
 import { PageViewer } from "../components/PageViewer";
-import { useSelectedDocument } from "../state/selectedDocument";
+import { reconcileSelection, useSelectedDocument } from "../state/selectedDocument";
 
 interface OpenPage {
   documentId: number;
@@ -33,6 +39,14 @@ export function Chat(): ReactElement {
   const selected = useSelectedDocument();
   const [openPage, setOpenPage] = useState<OpenPage | null>(null);
   const selectedId = selected?.id ?? null;
+
+  // The persisted id can outlive its document. Re-check it against the list the
+  // app already loaded (the Library records it) so a deleted document shows the
+  // plain empty state instead of a confident "Questioning <title>" strip. This
+  // reads module state only: it mints no request, which the page's tests pin.
+  useEffect(() => {
+    reconcileSelection();
+  }, []);
 
   const openCitedPage = useCallback(
     (page: number): void => {

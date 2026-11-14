@@ -7,6 +7,14 @@
  * value without introducing a provider or a new dependency, and mirroring it
  * into `sessionStorage` keeps the target across a page reload in the same tab
  * (one user, one machine — there is nothing to share between tabs).
+ *
+ * A persisted id can outlive its document (a delete, or a reset data directory),
+ * and the pages must never explain that as an error. The store therefore keeps
+ * the last document list the app loaded — module state, not `sessionStorage`,
+ * so it is never persisted or guessed at — and reconciles the selection against
+ * it. Both helpers are request-free; the Library records the list it already
+ * fetched, and the Chat and Eval dashboard pages re-check the selection on
+ * mount (Locked intent #17, the stale-selection rule).
  */
 
 import { useSyncExternalStore } from "react";
@@ -20,6 +28,13 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 
 let current: Document | null = readStored();
+
+/**
+ * The document list the app last loaded from `GET /api/documents`, or `null`
+ * when no page has loaded it yet. A page that has not seen a list must never
+ * guess: `reconcileSelection` is a no-op until something records one.
+ */
+let knownDocuments: readonly Document[] | null = null;
 
 function isDocument(value: unknown): value is Document {
   if (typeof value !== "object" || value === null) {
@@ -82,12 +97,51 @@ export function selectDocument(document: Document): void {
 
 /** Forget the Q&A target, e.g. after its document is deleted. */
 export function clearSelectedDocument(): void {
+  // The recorded list belongs to the same lifetime as the selection: the shared
+  // test setup calls this before every test, which must also forget the list so
+  // one test cannot leak a document list into the next.
+  knownDocuments = null;
   if (current === null) {
     return;
   }
   current = null;
   persist(null);
   notify();
+}
+
+/**
+ * Record the document list the app just loaded, and discard a selection that is
+ * no longer in it.
+ *
+ * This is the Library's call after `GET /api/documents`: the list is
+ * authoritative, so an id that has vanished (its document was deleted, or the
+ * data directory was reset) is cleared silently — no error text, no request, no
+ * console output. The same call after a delete keeps the list authoritative.
+ */
+export function rememberDocuments(documents: readonly Document[]): void {
+  knownDocuments = [...documents];
+  reconcileSelection();
+}
+
+/**
+ * Re-check the current selection against the recorded list and clear it when
+ * the id is absent.
+ *
+ * Returns `true` only when it actually cleared something. It is a no-op — and
+ * returns `false` — when no list has been recorded, so the Chat page and the
+ * Eval dashboard can call it on mount without loading the list themselves and
+ * without inventing a request their tests pin against.
+ */
+export function reconcileSelection(): boolean {
+  const selected = current;
+  if (selected === null || knownDocuments === null) {
+    return false;
+  }
+  if (knownDocuments.some((document) => document.id === selected.id)) {
+    return false;
+  }
+  clearSelectedDocument();
+  return true;
 }
 
 /** Subscribe to selection changes; returns the unsubscribe function. */

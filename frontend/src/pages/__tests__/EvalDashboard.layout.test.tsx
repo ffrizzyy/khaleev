@@ -14,7 +14,12 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearSelectedDocument, selectDocument } from "../../state/selectedDocument";
+import {
+  clearSelectedDocument,
+  getSelectedDocument,
+  rememberDocuments,
+  selectDocument,
+} from "../../state/selectedDocument";
 import type {
   Document,
   EvalRun,
@@ -32,6 +37,14 @@ const paper: Document = {
   title: "Tax guide.pdf",
   page_count: 4,
   created_at: "2026-02-03T10:15:00Z",
+};
+
+/** A live document the app knows about; not the persisted Q&A target. */
+const other: Document = {
+  id: 2,
+  title: "Other.pdf",
+  page_count: 1,
+  created_at: "2026-03-04T08:00:00Z",
 };
 
 const goldenSet: GoldenSet = {
@@ -270,5 +283,97 @@ describe("Eval dashboard layout", () => {
 
     expect(await screen.findByLabelText("k")).toHaveValue(5);
     expect(screen.getByRole("button", { name: "Run evaluation" })).toBeInTheDocument();
+  });
+
+  it("discards a persisted selection the recorded list no longer contains", async () => {
+    rememberDocuments([other]);
+    selectDocument(paper);
+    // The document is gone, so both of the page's own requests say so.
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (
+        url === `/api/documents/${paper.id}/evals` ||
+        url === `/api/documents/${paper.id}/golden`
+      ) {
+        return jsonResponse({ detail: `document ${paper.id} does not exist` }, 404);
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    renderDashboard();
+
+    expect(await screen.findByText("No document selected")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/");
+    // A deleted document is not an error, and its id is never spelled out.
+    expect(screen.queryByText(/does not exist/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Latest run" })).not.toBeInTheDocument();
+  });
+
+  it("reads a 404 from the eval history as the document being gone, not as an error", async () => {
+    selectDocument(paper);
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (
+        url === `/api/documents/${paper.id}/evals` ||
+        url === `/api/documents/${paper.id}/golden`
+      ) {
+        return jsonResponse({ detail: `document ${paper.id} does not exist` }, 404);
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    renderDashboard();
+
+    expect(await screen.findByText("No document selected")).toBeInTheDocument();
+    expect(screen.queryByText(/document 1 does not exist/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/could not load/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("still reports a genuine 500 from the eval history with its retry affordance", async () => {
+    selectDocument(paper);
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === `/api/documents/${paper.id}/evals`) {
+        return jsonResponse({ detail: "Database unavailable" }, 500);
+      }
+      if (url === `/api/documents/${paper.id}/golden`) {
+        return jsonResponse(goldenSet);
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    renderDashboard();
+
+    expect(
+      await screen.findByText(/could not load the evaluation history: database unavailable/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry loading the eval dashboard" })).toBeEnabled();
+    expect(screen.queryByText("No document selected")).not.toBeInTheDocument();
+  });
+
+  it("keeps the missing golden-set file message when the document itself still exists", async () => {
+    selectDocument(paper);
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === `/api/documents/${paper.id}/evals`) {
+        return jsonResponse([]);
+      }
+      if (url === `/api/documents/${paper.id}/golden`) {
+        return jsonResponse(
+          { detail: `golden set for document ${paper.id} not found at /data/golden/1.json` },
+          404,
+        );
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    renderDashboard();
+
+    expect(await screen.findByText(/golden set for document 1 not found/i)).toBeInTheDocument();
+    expect(screen.getByText(/the golden-set file is missing/i)).toBeInTheDocument();
+    expect(screen.queryByText("No document selected")).not.toBeInTheDocument();
+    expect(getSelectedDocument()?.id).toBe(paper.id);
   });
 });

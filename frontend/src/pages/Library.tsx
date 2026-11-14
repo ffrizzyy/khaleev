@@ -21,6 +21,12 @@
  * name). Loading states use `aria-busy` plus plain text, never a new live
  * region, because that same test asserts no `role="status"` once the list has
  * loaded.
+ *
+ * The loaded list is authoritative for the Q&A target: `rememberDocuments` runs
+ * on every successful list (and after a delete), so a persisted id whose
+ * document is gone is discarded silently before the list renders. A deleted
+ * document is not an error, so nothing on this page says "does not exist"; a
+ * genuine failure to load the list still does.
  */
 
 import { useCallback, useEffect, useId, useState } from "react";
@@ -32,11 +38,7 @@ import { DocumentList } from "../components/DocumentList";
 import { SearchIcon } from "../components/Icons";
 import { Upload } from "../components/Upload";
 import { setSearchQuery, useSearchQuery } from "../state/searchQuery";
-import {
-  clearSelectedDocument,
-  selectDocument,
-  useSelectedDocument,
-} from "../state/selectedDocument";
+import { rememberDocuments, selectDocument, useSelectedDocument } from "../state/selectedDocument";
 import type { Document } from "../types";
 
 function describeFailure(error: unknown): string {
@@ -107,6 +109,10 @@ export function Library(): ReactElement {
         if (!active) {
           return;
         }
+        // The fetched list is authoritative: a persisted Q&A target that is no
+        // longer in it is discarded before the list is rendered, so no stale
+        // title and no "document … does not exist" text can reach the page.
+        rememberDocuments(next);
         setLoadError(null);
         setDocuments(next);
       })
@@ -127,12 +133,14 @@ export function Library(): ReactElement {
 
   async function handleDelete(document: Document): Promise<void> {
     await deleteDocument(document.id);
-    setDocuments((current) =>
-      current === null ? current : current.filter((item) => item.id !== document.id),
-    );
-    if (selectedDocument?.id === document.id) {
-      clearSelectedDocument();
+    const remaining =
+      documents === null ? null : documents.filter((item) => item.id !== document.id);
+    // The list stays authoritative: if the deleted document was the Q&A target,
+    // recording the remaining documents clears it silently.
+    if (remaining !== null) {
+      rememberDocuments(remaining);
     }
+    setDocuments(remaining);
   }
 
   const loading = documents === null && loadError === null;

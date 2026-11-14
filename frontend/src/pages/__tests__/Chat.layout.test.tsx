@@ -12,7 +12,11 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearSelectedDocument, selectDocument } from "../../state/selectedDocument";
+import {
+  clearSelectedDocument,
+  rememberDocuments,
+  selectDocument,
+} from "../../state/selectedDocument";
 import type { AnswerResponse, Citation, Document } from "../../types";
 import { Chat } from "../Chat";
 
@@ -23,6 +27,14 @@ const paper: Document = {
   title: "Paper.pdf",
   page_count: 8,
   created_at: "2026-02-03T10:15:00Z",
+};
+
+/** A live document the app knows about; not the persisted Q&A target. */
+const other: Document = {
+  id: 2,
+  title: "Other.pdf",
+  page_count: 1,
+  created_at: "2026-03-04T08:00:00Z",
 };
 
 /** A realistic long title: no card may clip it or push its track wider. */
@@ -197,5 +209,23 @@ describe("Chat layout", () => {
     expect(screen.getByRole("heading", { name: "Chat" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/");
     expect(screen.queryByRole("region", { name: "Selected document" })).not.toBeInTheDocument();
+  });
+
+  it("discards a persisted selection the recorded list no longer contains, without a request", () => {
+    // The Library published the list earlier; the persisted id is not in it.
+    rememberDocuments([other]);
+    selectDocument(paper);
+    renderChat();
+
+    expect(screen.getByRole("heading", { name: "Chat" })).toBeInTheDocument();
+    expect(screen.getByText(/no document selected/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /library/i })).toHaveAttribute("href", "/");
+    expect(screen.queryByText(/questioning/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Selected document" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Question")).not.toBeInTheDocument();
+    // A deleted document is not an error, and reconciling never fetches the list.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText(/does not exist/i)).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

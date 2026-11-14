@@ -17,6 +17,14 @@
  * * A failed run or golden-set load is rendered as text with the API's own
  *   detail (the 422 empty-set message included) plus the next step, never as an
  *   unhandled rejection or a blank panel.
+ *
+ * A fourth rule is the stale selection (Locked intent #17): the persisted id can
+ * outlive its document, so the page re-checks it on mount against the list the
+ * Library already loaded, and reads the API's own answer as the same case — a
+ * 404 from the history route, or a 404 from the golden route whose detail names
+ * the missing document. Both discard the selection silently and fall back to the
+ * plain "No document selected" panel; every other failure keeps its error
+ * notice. No new request is issued for any of it.
  */
 
 import { useEffect, useId, useState } from "react";
@@ -28,7 +36,11 @@ import { getGoldenSet, listEvalRuns, startEval } from "../api/evals";
 import { EvalHistoryList } from "../components/EvalHistoryList";
 import { GoldenSetView } from "../components/GoldenSetView";
 import type { GoldenSetViewError } from "../components/GoldenSetView";
-import { useSelectedDocument } from "../state/selectedDocument";
+import {
+  clearSelectedDocument,
+  reconcileSelection,
+  useSelectedDocument,
+} from "../state/selectedDocument";
 import type { Document, EvalRunSummary, GoldenSet } from "../types";
 
 function describeFailure(error: unknown): string {
@@ -36,6 +48,22 @@ function describeFailure(error: unknown): string {
     return error.detail;
   }
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+/**
+ * True when a 404 means the document itself is gone.
+ *
+ * The golden route 404s both for an unknown document (stale selection — silent)
+ * and for a missing golden-set file (a real, fixable condition that keeps its
+ * own actionable message), so only a detail naming the missing document counts.
+ * The API's wording is `document <id> does not exist`.
+ */
+function isMissingDocumentError(error: unknown): boolean {
+  return (
+    isApiError(error) &&
+    error.status === 404 &&
+    /document\s+\d+\s+does not exist/i.test(error.detail)
+  );
 }
 
 function describeRunFailure(error: unknown): string {
@@ -126,6 +154,13 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
       })
       .catch((error: unknown) => {
         if (active) {
+          if (isApiError(error) && error.status === 404) {
+            // This route 404s only for an unknown document: the persisted
+            // selection outlived it, so discard it and let the page fall back to
+            // its plain "No document selected" state. Never an error notice.
+            clearSelectedDocument();
+            return;
+          }
           setHistoryError(describeFailure(error));
         }
       });
@@ -144,12 +179,19 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
         }
       })
       .catch((error: unknown) => {
-        if (active) {
-          setGoldenError({
-            status: isApiError(error) ? error.status : null,
-            message: describeFailure(error),
-          });
+        if (!active) {
+          return;
         }
+        if (isMissingDocumentError(error)) {
+          // The document is gone, so the golden set cannot exist either: the
+          // same silent discard as above, never a golden-set error card.
+          clearSelectedDocument();
+          return;
+        }
+        setGoldenError({
+          status: isApiError(error) ? error.status : null,
+          message: describeFailure(error),
+        });
       });
     return () => {
       active = false;
@@ -320,6 +362,14 @@ function EvaluationPanel({ document }: EvaluationPanelProps): ReactElement {
 
 export function EvalDashboard(): ReactElement {
   const selected = useSelectedDocument();
+
+  // The persisted id can outlive its document. Re-check it against the list the
+  // Library already loaded, and drop to the plain empty state when it is gone.
+  // No request is minted here (the page's request set is pinned by its tests);
+  // a reload straight onto this page is covered by the API's own 404s above.
+  useEffect(() => {
+    reconcileSelection();
+  }, []);
 
   return (
     <section className="page" aria-labelledby="evals-heading">
