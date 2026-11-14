@@ -16,11 +16,12 @@
  *
  * Two elements survive deliberately: the selection banner (it is the only place
  * the user sees which document is the Q&A target, and `Library.test.tsx` — a
- * pre-existing file this task may not edit — asserts both of its strings) and
- * the "Library" kicker (`App.test.tsx` needs exactly one heading with that
- * name). Loading states use `aria-busy` plus plain text, never a new live
- * region, because that same test asserts no `role="status"` once the list has
- * loaded.
+ * pre-existing file this task may not edit — asserts both of its strings; it is
+ * rendered only when at least one document exists, because an empty library has
+ * nothing to select) and the "Library" kicker (`App.test.tsx` needs exactly one
+ * heading with that name). Loading states use `aria-busy` plus plain text, never
+ * a new live region, because that same test asserts no `role="status"` once the
+ * list has loaded.
  *
  * The loaded list is authoritative for the Q&A target: `rememberDocuments` runs
  * on every successful list (and after a delete), so a persisted id whose
@@ -163,18 +164,20 @@ export function Library(): ReactElement {
         </div>
       </section>
 
-      <p
-        className={
-          selectedDocument === null
-            ? "selection-banner"
-            : "selection-banner selection-banner--active"
-        }
-        aria-live="polite"
-      >
-        {selectedDocument === null
-          ? "No document selected for Q&A yet."
-          : `Q&A target: ${selectedDocument.title}`}
-      </p>
+      {hasDocuments ? (
+        <p
+          className={
+            selectedDocument === null
+              ? "selection-banner"
+              : "selection-banner selection-banner--active"
+          }
+          aria-live="polite"
+        >
+          {selectedDocument === null
+            ? "No document selected for Q&A yet."
+            : `Q&A target: ${selectedDocument.title}`}
+        </p>
+      ) : null}
 
       {loading ? (
         <p className="status" role="status">

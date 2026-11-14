@@ -113,8 +113,7 @@ function NoDocument(): ReactElement {
         No document selected
       </h3>
       <p className="panel__text">
-        Add an entry to a document&apos;s golden set and run an evaluation from here. First pick the
-        document you want to evaluate.
+        Add an entry to a document&apos;s golden set and run an evaluation from here.
       </p>
       <p className="page__action">
         <Link className="text-link" to="/">

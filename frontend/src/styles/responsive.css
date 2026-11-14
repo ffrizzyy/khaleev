@@ -75,6 +75,9 @@
     flex-direction: row;
     align-items: stretch;
     margin: var(--space-5); /* ~24px inset from the viewport edges */
+    /* The inset grew to 24px, so the viewport allowance follows it. */
+    min-height: calc(100vh - var(--space-5) * 2);
+    min-height: calc(100dvh - var(--space-5) * 2);
   }
 
   .rail {

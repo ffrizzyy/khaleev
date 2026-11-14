@@ -2,8 +2,10 @@
  * Base layer: reset, global typography, the R1 frame/rail and the shared
  * controls (T23).
  *
- * The frame is normal document flow: no fixed height and no `100vh`, so the
- * page scrolls naturally and the rail always spans the panel it is in.
+ * The frame is normal document flow: no fixed height and no viewport unit on
+ * `html`/`body`. Its `min-height` is a viewport calculation on the panel itself
+ * (minus its own inset), so the panel reaches the bottom of the screen when the
+ * page is short and the page still scrolls naturally when it is long.
  */
 
 *,
@@ -139,6 +141,16 @@ a:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /*
+   * The frame is the application window: it fills the viewport even when the
+   * page is short, and still grows with long content because this is a minimum,
+   * never a height. The frame's own inset margin is subtracted so the top and
+   * bottom edges sit the same distance from the viewport edge. `dvh` follows
+   * mobile browser chrome; the `vh` line before it is the fallback. Neither
+   * `html` nor `body` is given a height.
+   */
+  min-height: calc(100vh - var(--space-4) * 2);
+  min-height: calc(100dvh - var(--space-4) * 2);
   margin: var(--space-4);
   border-radius: var(--radius-frame);
   background-color: var(--color-surface);

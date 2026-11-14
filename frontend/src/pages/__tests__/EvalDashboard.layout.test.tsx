@@ -285,6 +285,30 @@ describe("Eval dashboard layout", () => {
     expect(screen.getByRole("button", { name: "Run evaluation" })).toBeInTheDocument();
   });
 
+  it("states the no-document empty state once, with the Library link", () => {
+    renderDashboard();
+
+    const heading = screen.getByRole("heading", { name: "No document selected" });
+    const panel = heading.closest("section");
+    expect(panel).not.toBeNull();
+
+    // One short sentence, then the existing link — no second sentence saying
+    // the same thing again.
+    expect(
+      within(panel as HTMLElement).getByText(
+        "Add an entry to a document's golden set and run an evaluation from here.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(panel as HTMLElement).queryByText(/first pick the document you want to evaluate/i),
+    ).not.toBeInTheDocument();
+    expect(within(panel as HTMLElement).getByRole("link", { name: /library/i })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("discards a persisted selection the recorded list no longer contains", async () => {
     rememberDocuments([other]);
     selectDocument(paper);

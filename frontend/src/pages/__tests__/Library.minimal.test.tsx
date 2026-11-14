@@ -126,6 +126,16 @@ describe("Library minimal landing", () => {
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });
 
+  it("renders no selection banner when the library is empty", async () => {
+    installApi([]);
+    render(<Library />);
+
+    // There is nothing to select, so the sentence would be noise: the page is
+    // hero, then the "Your documents" heading and its empty-state sentence.
+    await screen.findByText(/no documents yet/i);
+    expect(screen.queryByText(/no document selected for Q&A yet/i)).not.toBeInTheDocument();
+  });
+
   it("renders a labelled search field once at least one document exists", async () => {
     installApi([paper]);
     render(<Library />);
