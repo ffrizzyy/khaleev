@@ -546,7 +546,7 @@ All four are imported exactly once, in `frontend/src/main.tsx`; no component imp
 own, and Vite emits them as a single stylesheet at build time. Highlights:
 
 - One light theme and exactly the R2 palette. `#2C2C2C` ink measures 12.7:1 on the `#F3F4F4` canvas
-  and 13.6:1 on a `#FFFFFF` card; white on `#612D53` measures 10.5:1 and on `#853953` 7.8:1
+  and 14.0:1 on a `#FFFFFF` card; white on `#612D53` measures 10.5:1 and on `#853953` 7.8:1
   (WCAG 2.1 AA requires 4.5:1 for body text). Pale tints are accent mixed with white and are
   decorative only.
 - A visible `:focus-visible` ring (3px, primary accent, 2px offset) on every link, button, form
