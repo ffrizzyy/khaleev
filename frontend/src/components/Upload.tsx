@@ -120,7 +120,7 @@ export function Upload({ existingDocuments = [], onUploaded }: UploadProps): Rea
           Upload PDF
         </label>
         <input
-          className="upload__input visually-hidden"
+          className="visually-hidden"
           id={inputId}
           type="file"
           accept="application/pdf,.pdf"

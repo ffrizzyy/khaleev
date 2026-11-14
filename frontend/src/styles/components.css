@@ -23,6 +23,13 @@
   color: var(--color-text-muted);
 }
 
+/* One page-heading scale on every route, so Chat, the eval dashboard and the
+   not-found page read as siblings. */
+.page__title {
+  font-size: var(--text-2xl);
+  overflow-wrap: anywhere;
+}
+
 .page__action {
   font-size: var(--text-sm);
 }
@@ -51,6 +58,22 @@
   max-width: var(--measure);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+/*
+ * An empty state is still a card, but an honest one: no border, a pale surface
+ * instead of white, and its copy centred with generous padding.
+ */
+.panel--empty {
+  padding: var(--space-6) var(--space-5);
+  border: 0;
+  background-color: var(--color-canvas);
+  text-align: center;
+}
+
+.panel--empty .panel__text {
+  max-width: 52ch;
+  margin-inline: auto;
 }
 
 .code-inline {
@@ -495,6 +518,20 @@
   justify-items: start;
 }
 
+/*
+ * The runs card groups its own heading row above the stacked run cards. It
+ * keeps the side column's rhythm and gives its heading the same hairline the
+ * other side card draws under its centred label, so the two read as siblings.
+ */
+.side-card--runs {
+  gap: var(--space-3);
+}
+
+.side-card--runs .section-heading {
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
 /* Metrics: the largest type on the page, per R1's number treatment. */
 .metric-pair {
   display: grid;
@@ -851,6 +888,15 @@
 
 .panel--run {
   gap: var(--space-3);
+}
+
+/*
+ * The golden set is the reference data the metrics are scored against: the same
+ * card as the run form, marked with the secondary accent's inline-start rule.
+ */
+.panel--golden {
+  gap: var(--space-3);
+  border-inline-start: 4px solid var(--color-accent-secondary);
 }
 
 .run-form {

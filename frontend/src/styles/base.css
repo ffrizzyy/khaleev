@@ -393,8 +393,7 @@ a:hover {
 }
 
 .field__text,
-.field__number,
-.field__file {
+.field__number {
   display: block;
   width: 100%;
   max-width: 100%;

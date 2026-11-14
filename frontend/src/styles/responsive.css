@@ -26,6 +26,10 @@
     padding: var(--space-4);
   }
 
+  .panel--empty {
+    padding: var(--space-5) var(--space-4);
+  }
+
   .panel--latest {
     padding-inline: var(--space-4);
   }
@@ -162,6 +166,10 @@
 
   .panel {
     padding: var(--space-5);
+  }
+
+  .panel--empty {
+    padding: var(--space-6) var(--space-5);
   }
 
   .metrics {

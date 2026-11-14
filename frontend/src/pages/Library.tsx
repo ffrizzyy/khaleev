@@ -380,7 +380,7 @@ export function Library(): ReactElement {
   const visibleDocuments = documents === null ? [] : filterDocuments(documents, searchQuery);
 
   return (
-    <section className="page library-page" aria-labelledby="library-heading">
+    <section className="page" aria-labelledby="library-heading">
       <div className="library-grid">
         <div className="library-main">
           <section className="hero">
