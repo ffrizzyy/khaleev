@@ -44,15 +44,29 @@ let current: Document | null = readStored();
  */
 let knownDocuments: readonly Document[] | null = null;
 
+/**
+ * True only for a positive integer. `1.5`, `-1`, `0` and `Infinity` are all
+ * `number`s but none of them is an id or a page count: a persisted value that
+ * carries one is corrupt — hand-edited storage, or `JSON.parse` silently
+ * overflowing `1e999` to `Infinity` — and must not be trusted.
+ */
+function isPositiveInteger(value: unknown): boolean {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
 function isDocument(value: unknown): value is Document {
   if (typeof value !== "object" || value === null) {
     return false;
   }
   const record = value as Record<string, unknown>;
+  // Ids and page counts are positive integers in the API contract this type
+  // mirrors (`DocumentOut.page_count` is `Field(ge=1)`), so a persisted
+  // selection that fails either check is not a document: it degrades to "no
+  // selection" rather than naming a document the user cannot have chosen.
   return (
-    typeof record.id === "number" &&
+    isPositiveInteger(record.id) &&
     typeof record.title === "string" &&
-    typeof record.page_count === "number" &&
+    isPositiveInteger(record.page_count) &&
     typeof record.created_at === "string"
   );
 }
@@ -88,7 +102,8 @@ function persist(next: Document | null): void {
 /**
  * The ids of the last document list the app loaded, as persisted on the
  * previous visit, or `null` when none was recorded or the value is unusable.
- * Ids only — never the documents themselves.
+ * Ids only — never the documents themselves. An entry that is not a positive
+ * integer makes the whole value unusable, exactly as corrupt JSON does.
  */
 function readKnownIds(): number[] | null {
   try {
@@ -97,7 +112,7 @@ function readKnownIds(): number[] | null {
       return null;
     }
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed) || !parsed.every((id) => typeof id === "number")) {
+    if (!Array.isArray(parsed) || !parsed.every(isPositiveInteger)) {
       return null;
     }
     return parsed as number[];

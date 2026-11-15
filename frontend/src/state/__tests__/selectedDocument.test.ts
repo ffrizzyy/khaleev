@@ -222,4 +222,88 @@ describe("cold start straight onto /chat", () => {
     expect(store.reconcileSelection()).toBe(false);
     expect(store.getSelectedDocument()).toEqual(ghost);
   });
+
+  it("treats a list containing a float id as no list and clears nothing", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ghost));
+    sessionStorage.setItem(KNOWN_IDS_KEY, JSON.stringify([paper.id, 1.5]));
+
+    const store = await importAfterColdStart();
+
+    expect(store.reconcileSelection()).toBe(false);
+    expect(store.getSelectedDocument()).toEqual(ghost);
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(ghost));
+  });
+
+  it("treats a list containing a negative id as no list and clears nothing", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ghost));
+    sessionStorage.setItem(KNOWN_IDS_KEY, JSON.stringify([-1]));
+
+    const store = await importAfterColdStart();
+
+    expect(store.reconcileSelection()).toBe(false);
+    expect(store.getSelectedDocument()).toEqual(ghost);
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(ghost));
+  });
+
+  it("treats a number that overflows to Infinity as no list and clears nothing", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ghost));
+    // `JSON.parse` accepts `1e999` and silently overflows it to `Infinity`,
+    // which is a `number` but not an id.
+    sessionStorage.setItem(KNOWN_IDS_KEY, `[${paper.id},1e999]`);
+
+    const store = await importAfterColdStart();
+
+    expect(store.reconcileSelection()).toBe(false);
+    expect(store.getSelectedDocument()).toEqual(ghost);
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(ghost));
+  });
+
+  it("treats a list containing a null or string entry as no list and clears nothing", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ghost));
+    sessionStorage.setItem(KNOWN_IDS_KEY, JSON.stringify([paper.id, null, String(other.id)]));
+
+    const store = await importAfterColdStart();
+
+    expect(store.reconcileSelection()).toBe(false);
+    expect(store.getSelectedDocument()).toEqual(ghost);
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify(ghost));
+  });
+
+  it("does not restore a persisted selection whose id is a float", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...ghost, id: 1.5 }));
+
+    const store = await importAfterColdStart();
+
+    expect(store.getSelectedDocument()).toBeNull();
+    expect(store.reconcileSelection()).toBe(false);
+  });
+
+  it("does not restore a persisted selection whose id is negative", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...ghost, id: -1 }));
+
+    const store = await importAfterColdStart();
+
+    expect(store.getSelectedDocument()).toBeNull();
+    expect(store.reconcileSelection()).toBe(false);
+  });
+
+  it("does not restore a persisted selection whose page count is a float", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...ghost, page_count: 2.5 }));
+
+    const store = await importAfterColdStart();
+
+    expect(store.getSelectedDocument()).toBeNull();
+    expect(store.reconcileSelection()).toBe(false);
+  });
+
+  it("does not restore a persisted selection whose page count is zero", async () => {
+    // `DocumentOut.page_count` is `Field(ge=1)` on the backend; zero pages is
+    // not a document the API can return.
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...ghost, page_count: 0 }));
+
+    const store = await importAfterColdStart();
+
+    expect(store.getSelectedDocument()).toBeNull();
+    expect(store.reconcileSelection()).toBe(false);
+  });
 });
