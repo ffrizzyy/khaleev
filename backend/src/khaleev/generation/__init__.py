@@ -7,6 +7,9 @@ rules are the product rules:
   intent #10, #11, AC3);
 * ``cloud`` is only built when the user explicitly selected it **and** supplied
   both a key and a model; otherwise the error says exactly what is missing;
+  the endpoint it is built with is the settings' resolved one — an explicit
+  ``KHALEEV_CLOUD_BASE_URL``, else the ``KHALEEV_CLOUD_PROVIDER`` preset, else
+  the OpenAI default (Locked intent 18);
 * a cloud key alone never changes the default, because the app must not send
   document content off-machine unless the user asked for it (Boundaries ->
   Never).
@@ -57,6 +60,10 @@ def build_generator(settings: Settings | None = None) -> Generator:
                 "cloud generation is selected but KHALEEV_CLOUD_MODEL is not set; "
                 "set it or set KHALEEV_GENERATOR=ollama for the zero-key local default"
             )
-        return CloudGenerator(config.cloud_api_key, config.cloud_model)
+        return CloudGenerator(
+            config.cloud_api_key,
+            config.cloud_model,
+            base_url=config.resolved_cloud_base_url,
+        )
 
     return OllamaGenerator(config.ollama_base_url, config.ollama_model)

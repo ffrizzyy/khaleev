@@ -212,6 +212,8 @@ Remove the line or use an absolute path if you want the default location.
 | `KHALEEV_OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name. |
 | `KHALEEV_CLOUD_API_KEY` | unset | Optional; only used when `KHALEEV_GENERATOR=cloud`. |
 | `KHALEEV_CLOUD_MODEL` | unset | Optional; required with the cloud key. |
+| `KHALEEV_CLOUD_BASE_URL` | unset (resolves to `https://api.openai.com/v1`) | Optional OpenAI-compatible endpoint; an explicit value always wins over the provider preset. Must be an absolute `http://`/`https://` URL, and an empty value is rejected. |
+| `KHALEEV_CLOUD_PROVIDER` | unset | Optional preset: `openai`, `openrouter`, `groq`, `gemini`, `cerebras` or `github`. Used only when `KHALEEV_CLOUD_BASE_URL` is unset. |
 | `KHALEEV_RETRIEVAL_K` | `5` | Top-k chunks per question; recorded with every eval run. |
 | `KHALEEV_CHUNK_SIZE` | `600` | Chunk length in characters, validated to 400–800. |
 | `KHALEEV_CHUNK_OVERLAP_RATIO` | `0.12` | Overlap between consecutive chunks, validated to 0.10–0.15. |
@@ -222,6 +224,9 @@ of the process lifetime; they never require a key and never discard an injected 
 Cloud generation is opt-in only. It is built solely when `KHALEEV_GENERATOR=cloud` **and** both the
 key and the model are set; otherwise the request fails with an actionable 503 and document content
 is never sent off-machine.
+
+The cloud endpoint and provider are configured by environment or `backend/.env` only; they are
+deliberately not exposed by `GET`/`PUT /api/config`.
 
 ## Data directory layout
 

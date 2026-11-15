@@ -6,19 +6,18 @@ other reason. It is never the default, it is only built when
 whole app works with no key at all (Locked intent #10, #11, AC3).
 
 The wire format is the widely supported OpenAI-compatible chat-completions
-shape. The endpoint is injectable for exactly the same reason as the Ollama
-client: tests use ``httpx.MockTransport`` and open no socket (Locked intent
-#12, AC8).
+shape, which is what lets a free-tier provider be used through a preset. The
+endpoint is injectable for exactly the same reason as the Ollama client: tests
+use ``httpx.MockTransport`` and open no socket (Locked intent #12, AC8).
 """
 
 from __future__ import annotations
 
 import httpx
 
+from khaleev.cloud_providers import DEFAULT_CLOUD_BASE_URL
 from khaleev.generation.base import GenerationError, GeneratorNotConfiguredError
 
-#: OpenAI's public API; a compatible self-hosted endpoint can override it.
-DEFAULT_CLOUD_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_TIMEOUT_SECONDS = 120.0
 
 
