@@ -1,0 +1,115 @@
+name: Bug report
+description: Something produced a wrong answer, an error, or a broken page.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Khaleev runs locally with your own documents. Remove document text, API keys and personal
+        file paths from anything you paste below.
+
+  - type: checkboxes
+    id: pre-submit
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and this is not already reported.
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you saw, and the exact error text if there was one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Upload ...
+        2. Select ...
+        3. Ask ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: page
+    attributes:
+      label: Where did it happen?
+      options:
+        - Library
+        - Chat
+        - Eval dashboard
+        - Not page-specific (API or startup)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: no-api-key
+    attributes:
+      label: Does it still happen with no API key configured?
+      description: >-
+        The zero-key configuration is `KHALEEV_GENERATOR=ollama` (the default) with no
+        `KHALEEV_CLOUD_*` variables set.
+      options:
+        - Yes, it reproduces with no API key
+        - No, it only happens with the cloud generator
+        - Not tried
+    validations:
+      required: true
+
+  - type: input
+    id: backend-port
+    attributes:
+      label: Backend port
+      description: The port `uvicorn` was started on. The documented command uses 8000.
+      placeholder: "8000"
+    validations:
+      required: true
+
+  - type: input
+    id: frontend-port
+    attributes:
+      label: Frontend port
+      description: The port Vite printed. The documented setup uses 5173.
+      placeholder: "5173"
+    validations:
+      required: true
+
+  - type: textarea
+    id: gate-output
+    attributes:
+      label: Failing gate output
+      description: >-
+        If a check fails, paste its last lines here: `uv run ruff check .`, `uv run pytest -q`,
+        `npm run lint`, `npm run build`, `npm test -- --run`, `npx prettier --check .` or
+        `node tasks/class-scan.mjs frontend/src`. Leave empty if every check passes.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: The versions you are actually running.
+      placeholder: |
+        OS:
+        Python:
+        uv:
+        Node:
+        npm:
+        Ollama model (if used):
+    validations:
+      required: true

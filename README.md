@@ -41,6 +41,7 @@ a local Ollama model.
 14. [Frontend styling](#frontend-styling)
 15. [Known gaps](#known-gaps)
 16. [API surface](#api-surface)
+17. [Contributing and security](#contributing-and-security)
 
 ---
 
@@ -627,3 +628,10 @@ Domain errors are mapped once, in `backend/src/khaleev/app.py`: `400` not a PDF,
 invalid or empty golden set / undefined metric / no context, `404` unknown document, page or run,
 `503` generator or scorer unavailable. Domain errors answer `{"detail": "<message>"}`; FastAPI's own
 request-validation 422 keeps its standard `detail` list shape.
+
+## Contributing and security
+
+[CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the checks that gate a change, the pipeline and the
+local-first constraints. Report vulnerabilities privately through
+[SECURITY.md](SECURITY.md), never in a public issue. Participation is covered by
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

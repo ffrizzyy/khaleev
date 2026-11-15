@@ -1,0 +1,76 @@
+name: Feature request
+description: Propose a capability the app does not have yet.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Khaleev is a single-user, local-first application. The v1 scope in `SPEC.md` leaves out
+        authentication and multi-user support, OCR of image-only PDFs, non-PDF ingestion, Q&A
+        across several documents, automatic golden-set generation, scheduled evals and production
+        hardening. A request that needs one of those is still worth filing, but say so, because it
+        is a scope change rather than a fix.
+
+  - type: checkboxes
+    id: pre-submit
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and this is not already requested.
+          required: true
+        - label: I have read the out-of-scope list above and this is not one of those items, or I say below why it should be.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation you are in, not the implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like to happen
+      description: The behaviour you expect, including what the UI should show and which endpoint it would use if you know.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Library
+        - Chat
+        - Eval dashboard
+        - Backend API
+        - Setup and documentation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cost
+    attributes:
+      label: What would it cost?
+      description: >-
+        The app has no telemetry, no hosted service and no required API key, and no request may
+        go off-machine unless the user selects the cloud generator. A proposal that breaks one of
+        those is a change to the product's constraints, so it needs to be argued for.
+      options:
+        - No new dependency and no new outbound request
+        - A new Python or npm dependency
+        - An outbound request, or document text leaving the machine
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including anything you can already do with the existing settings or endpoints.
+    validations:
+      required: false
