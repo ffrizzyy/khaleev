@@ -228,4 +228,17 @@ describe("Chat layout", () => {
     expect(screen.queryByText(/does not exist/i)).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("reconciles the ids persisted by an earlier visit on a cold load, without a request", () => {
+    // No page has loaded a list in this tab yet: only the ids the Library
+    // persisted on the last visit are available, and they exclude the target.
+    sessionStorage.setItem("khaleev.known-documents", JSON.stringify([other.id]));
+    selectDocument(paper);
+    renderChat();
+
+    expect(screen.getByText(/no document selected/i)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Selected document" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/questioning/i)).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

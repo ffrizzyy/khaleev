@@ -10,11 +10,18 @@
  *
  * A persisted id can outlive its document (a delete, or a reset data directory),
  * and the pages must never explain that as an error. The store therefore keeps
- * the last document list the app loaded — module state, not `sessionStorage`,
- * so it is never persisted or guessed at — and reconciles the selection against
- * it. Both helpers are request-free; the Library records the list it already
+ * the last document list the app loaded and reconciles the selection against it.
+ * Both helpers are request-free; the Library records the list it already
  * fetched, and the Chat and Eval dashboard pages re-check the selection on
  * mount (Locked intent #17, the stale-selection rule).
+ *
+ * That list's ids are mirrored into `sessionStorage` beside the selection,
+ * because module state resets on a reload: without the ids, a cold load
+ * straight onto `/chat` has no list to reconcile against and would confidently
+ * name a document that is gone. Persisting them is safe — an id list is not a
+ * selection, and a stale id is still caught by the Library's next
+ * `GET /api/documents` (which overwrites the list) and by the ask endpoint's
+ * 404. Strictly better than showing a ghost.
  */
 
 import { useSyncExternalStore } from "react";
@@ -22,6 +29,7 @@ import { useSyncExternalStore } from "react";
 import type { Document } from "../types";
 
 const STORAGE_KEY = "khaleev.selected-document";
+const KNOWN_IDS_KEY = "khaleev.known-documents";
 
 type Listener = () => void;
 
@@ -77,6 +85,42 @@ function persist(next: Document | null): void {
   }
 }
 
+/**
+ * The ids of the last document list the app loaded, as persisted on the
+ * previous visit, or `null` when none was recorded or the value is unusable.
+ * Ids only — never the documents themselves.
+ */
+function readKnownIds(): number[] | null {
+  try {
+    const raw = sessionStorage.getItem(KNOWN_IDS_KEY);
+    if (raw === null) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.every((id) => typeof id === "number")) {
+      return null;
+    }
+    return parsed as number[];
+  } catch {
+    // Corrupt JSON or unavailable storage means "no list": the reconciliation
+    // then stays a no-op rather than guessing at a list it cannot trust.
+    return null;
+  }
+}
+
+function persistKnownIds(ids: readonly number[] | null): void {
+  try {
+    if (ids === null) {
+      sessionStorage.removeItem(KNOWN_IDS_KEY);
+    } else {
+      sessionStorage.setItem(KNOWN_IDS_KEY, JSON.stringify(ids));
+    }
+  } catch {
+    // Module state still reconciles this visit; only the next cold load loses
+    // its fallback, which degrades to the no-op it was before T28.
+  }
+}
+
 function notify(): void {
   for (const listener of listeners) {
     listener();
@@ -97,10 +141,13 @@ export function selectDocument(document: Document): void {
 
 /** Forget the Q&A target, e.g. after its document is deleted. */
 export function clearSelectedDocument(): void {
-  // The recorded list belongs to the same lifetime as the selection: the shared
-  // test setup calls this before every test, which must also forget the list so
-  // one test cannot leak a document list into the next.
+  // The recorded lists — module state and the persisted ids — belong to the same
+  // lifetime as the selection: the shared test setup calls this before every
+  // test, which must also forget them so one test cannot leak a document list
+  // into the next. Dropping the persisted ids also means a cleared selection
+  // cannot be resurrected by a cold load.
   knownDocuments = null;
+  persistKnownIds(null);
   if (current === null) {
     return;
   }
@@ -120,6 +167,9 @@ export function clearSelectedDocument(): void {
  */
 export function rememberDocuments(documents: readonly Document[]): void {
   knownDocuments = [...documents];
+  // Persist the ids before reconciling, so a selection cleared here takes the
+  // id list with it: nothing stale survives into the next cold load.
+  persistKnownIds(documents.map((document) => document.id));
   reconcileSelection();
 }
 
@@ -130,14 +180,21 @@ export function rememberDocuments(documents: readonly Document[]): void {
  * Returns `true` only when it actually cleared something. It is a no-op — and
  * returns `false` — when no list has been recorded, so the Chat page and the
  * Eval dashboard can call it on mount without loading the list themselves and
- * without inventing a request their tests pin against.
+ * without inventing a request their tests pin against. A cold load has no
+ * module-level list, so the ids persisted by the last `rememberDocuments` stand
+ * in; only a persisted list that exists and excludes the id clears it.
  */
 export function reconcileSelection(): boolean {
   const selected = current;
-  if (selected === null || knownDocuments === null) {
+  if (selected === null) {
     return false;
   }
-  if (knownDocuments.some((document) => document.id === selected.id)) {
+  const knownIds: readonly number[] | null =
+    knownDocuments === null ? readKnownIds() : knownDocuments.map((document) => document.id);
+  if (knownIds === null) {
+    return false;
+  }
+  if (knownIds.includes(selected.id)) {
     return false;
   }
   clearSelectedDocument();
