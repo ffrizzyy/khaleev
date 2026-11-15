@@ -9,13 +9,17 @@ The wire format is the widely supported OpenAI-compatible chat-completions
 shape, which is what lets a free-tier provider be used through a preset. The
 endpoint is injectable for exactly the same reason as the Ollama client: tests
 use ``httpx.MockTransport`` and open no socket (Locked intent #12, AC8).
+
+``base_url`` is normalised here as well as in ``Settings`` (whitespace and
+trailing slashes stripped; query strings, fragments and ``//`` path segments
+rejected) so a programmatic caller cannot bypass the settings validation.
 """
 
 from __future__ import annotations
 
 import httpx
 
-from khaleev.cloud_providers import DEFAULT_CLOUD_BASE_URL
+from khaleev.cloud_providers import DEFAULT_CLOUD_BASE_URL, normalise_cloud_base_url
 from khaleev.generation.base import GenerationError, GeneratorNotConfiguredError
 
 DEFAULT_TIMEOUT_SECONDS = 120.0
@@ -43,9 +47,13 @@ class CloudGenerator:
                 "cloud generation needs KHALEEV_CLOUD_MODEL; set it or switch "
                 "KHALEEV_GENERATOR back to 'ollama'"
             )
+        try:
+            resolved_base_url = normalise_cloud_base_url(base_url)
+        except ValueError as exc:
+            raise GeneratorNotConfiguredError(str(exc)) from None
         self.api_key = api_key
         self.model = model
-        self.base_url = base_url.rstrip("/")
+        self.base_url = resolved_base_url
         self.timeout = timeout
         self._client = client
 

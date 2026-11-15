@@ -21,6 +21,7 @@ import pytest
 from fastapi import FastAPI
 from fixtures.api_client import ApiClient
 from fixtures.pdf_factory import build_pdf
+from pydantic import ValidationError
 from sqlalchemy.engine import Engine
 
 from khaleev.app import create_app
@@ -108,3 +109,34 @@ def test_the_config_endpoint_still_answers_200_with_todays_five_fields(
     text = response.text
     assert "cloud_base_url" not in text
     assert "cloud_provider" not in text
+
+
+def test_a_boot_with_the_retired_github_preset_is_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GitHub Models was retired 2026-07-30; the boot refuses the name."""
+    monkeypatch.setenv("KHALEEV_CLOUD_PROVIDER", "github")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None)
+
+    message = excinfo.value.errors()[0]["msg"]
+    assert "KHALEEV_CLOUD_PROVIDER" in message
+    for accepted in ("openai", "openrouter", "groq", "gemini", "cerebras"):
+        assert accepted in message
+    assert "github" not in message
+
+
+def test_a_boot_with_a_query_bearing_base_url_is_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An Azure-style ``?api-version=`` base would compose a malformed URL."""
+    monkeypatch.setenv("KHALEEV_GENERATOR", "cloud")
+    monkeypatch.setenv("KHALEEV_CLOUD_BASE_URL", f"{BASE_URL}?api-version=2024-01-01")
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None)
+
+    message = str(excinfo.value)
+    assert "KHALEEV_CLOUD_BASE_URL" in message
+    assert "/chat/completions" in message

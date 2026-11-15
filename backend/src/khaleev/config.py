@@ -19,11 +19,15 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from khaleev import paths
-from khaleev.cloud_providers import CLOUD_PROVIDER_BASE_URLS, DEFAULT_CLOUD_BASE_URL
+from khaleev.cloud_providers import (
+    CLOUD_PROVIDER_BASE_URLS,
+    DEFAULT_CLOUD_BASE_URL,
+    normalise_cloud_base_url,
+)
 
 ENV_PREFIX = "KHALEEV_"
 
-CloudProvider = Literal["openai", "openrouter", "groq", "gemini", "cerebras", "github"]
+CloudProvider = Literal["openai", "openrouter", "groq", "gemini", "cerebras"]
 
 _INVALID_CLOUD_BASE_URL = (
     "KHALEEV_CLOUD_BASE_URL must be an absolute URL starting with http:// or https://"
@@ -75,10 +79,14 @@ class Settings(BaseSettings):
     @field_validator("cloud_base_url", mode="before")
     @classmethod
     def _absolute_http_base_url(cls, value: object) -> object:
-        """Accept only an absolute ``http``/``https`` URL; strip a trailing slash.
+        """Accept only an absolute ``http``/``https`` URL that can compose a request.
 
-        ``None`` is the *only* "unset" value: ``""`` and whitespace are invalid
-        URLs, never a third resolution path (SPEC item 18's (A) clarification).
+        Surrounding whitespace and a trailing slash are normalised, not errors.
+        A query string or fragment is rejected through the shared normaliser:
+        the client appends ``/chat/completions``, so such a base can only
+        produce a malformed request URL (Locked intent 18). ``None`` is the
+        *only* "unset" value: ``""`` and whitespace are invalid URLs, never a
+        third resolution path (SPEC item 18's (A) clarification).
         """
         if value is None:
             return None
@@ -91,7 +99,7 @@ class Settings(BaseSettings):
             raise ValueError(_INVALID_CLOUD_BASE_URL) from None
         if parts.scheme not in {"http", "https"} or not parts.netloc:
             raise ValueError(_INVALID_CLOUD_BASE_URL)
-        return candidate.rstrip("/")
+        return normalise_cloud_base_url(candidate)
 
     @property
     def resolved_cloud_base_url(self) -> str:

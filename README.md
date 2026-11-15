@@ -212,8 +212,8 @@ Remove the line or use an absolute path if you want the default location.
 | `KHALEEV_OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name. |
 | `KHALEEV_CLOUD_API_KEY` | unset | Optional; only used when `KHALEEV_GENERATOR=cloud`. |
 | `KHALEEV_CLOUD_MODEL` | unset | Optional; required with the cloud key. |
-| `KHALEEV_CLOUD_BASE_URL` | unset (resolves to `https://api.openai.com/v1`) | Optional OpenAI-compatible endpoint; an explicit value always wins over the provider preset. Must be an absolute `http://`/`https://` URL, and an empty value is rejected. |
-| `KHALEEV_CLOUD_PROVIDER` | unset | Optional preset: `openai`, `openrouter`, `groq`, `gemini`, `cerebras` or `github`. Used only when `KHALEEV_CLOUD_BASE_URL` is unset. |
+| `KHALEEV_CLOUD_BASE_URL` | unset (resolves to `https://api.openai.com/v1`) | Optional OpenAI-compatible endpoint; an explicit value always wins over the provider preset. Must be an absolute `http://`/`https://` URL without a query string or fragment; surrounding whitespace and a trailing slash are normalised, and an empty value is rejected. |
+| `KHALEEV_CLOUD_PROVIDER` | unset | Optional preset: `openai`, `openrouter`, `groq`, `gemini`, `cerebras`. Used only when `KHALEEV_CLOUD_BASE_URL` is unset. |
 | `KHALEEV_RETRIEVAL_K` | `5` | Top-k chunks per question; recorded with every eval run. |
 | `KHALEEV_CHUNK_SIZE` | `600` | Chunk length in characters, validated to 400–800. |
 | `KHALEEV_CHUNK_OVERLAP_RATIO` | `0.12` | Overlap between consecutive chunks, validated to 0.10–0.15. |

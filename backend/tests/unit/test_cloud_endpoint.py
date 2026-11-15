@@ -1,18 +1,23 @@
 """Unit tests for the configurable cloud endpoint and its provider presets (T29).
 
 Locked intent 18 makes the cloud endpoint configurable by environment or
-``.env``, with a closed set of six OpenAI-compatible provider presets, without
+``.env``, with a closed set of five OpenAI-compatible provider presets, without
 inventing a third resolution rule:
 
 * an explicit ``KHALEEV_CLOUD_BASE_URL`` always wins;
 * the ``KHALEEV_CLOUD_PROVIDER`` preset applies **only** when the base URL is
   ``None``;
 * neither set resolves to today's OpenAI endpoint;
-* the empty string is an invalid URL, never "unset" — unset is ``None``.
+* the empty string is an invalid URL, never "unset" — unset is ``None``;
+* surrounding whitespace and a trailing slash are normalised, while a query
+  string, a fragment or a ``//`` path segment is rejected in both layers,
+  because the client appends ``/chat/completions`` to the base.
 
-The six URLs are assumptions (A) that age, so they live in one table and are
+The five URLs are assumptions (A) that age, so they live in one table and are
 pinned here: ``PINNED_CLOUD_BASE_URLS`` in this file is the single place to
-correct an aged URL, after which the table mirrors it.
+correct an aged URL, after which the table mirrors it. Per amended item 18 the
+test also carries ``PRESETS_VERIFIED_ON``, the date the set was last checked
+against the providers' live documentation.
 
 Nothing here opens a socket or loads a model (Locked intent #12, AC8): the
 settings are pure pydantic validation and the factory builds a client that is
@@ -35,14 +40,23 @@ from khaleev.generation.base import GeneratorNotConfiguredError
 from khaleev.generation.cloud import CloudGenerator
 from khaleev.generation.ollama import OllamaGenerator
 
+#: The date this five-URL set was last verified against the providers' live
+#: documentation (amended SPEC item 18: the test carries the date so a reader
+#: can tell how fresh the table is without opening the spec).
+PRESETS_VERIFIED_ON = "2026-11-15"
+
 #: The pinned preset table — SPEC item 18's (A) URLs, copied verbatim.
+#:
+#: ``github`` is deliberately absent. GitHub Models was retired on 2026-07-30
+#: (verified 2026-11-15 against https://docs.github.com/en/github-models), so
+#: the preset was dropped and must not be restored "for symmetry": the five
+#: names below are the whole set.
 PINNED_CLOUD_BASE_URLS = {
     "openai": "https://api.openai.com/v1",
     "openrouter": "https://openrouter.ai/api/v1",
     "groq": "https://api.groq.com/openai/v1",
     "gemini": "https://generativelanguage.googleapis.com/v1beta/openai/",
     "cerebras": "https://api.cerebras.ai/v1",
-    "github": "https://models.github.ai",
 }
 
 BASE_URL = "https://cloud.example.test/v1"
@@ -64,8 +78,9 @@ MISSING_MODEL_MESSAGE = (
 # ---------------------------------------------------------------------------
 
 
-def test_the_provider_table_pins_the_six_spec_urls() -> None:
+def test_the_provider_table_pins_the_five_spec_urls() -> None:
     """The single place to correct an aged URL: the dict above, then the table."""
+    assert PRESETS_VERIFIED_ON == "2026-11-15"
     assert CLOUD_PROVIDER_BASE_URLS == PINNED_CLOUD_BASE_URLS
 
 
@@ -76,7 +91,6 @@ def test_the_provider_name_set_is_exactly_the_closed_set() -> None:
         "groq",
         "gemini",
         "cerebras",
-        "github",
     }
 
 
@@ -185,6 +199,75 @@ def test_the_pinned_gemini_url_keeps_its_trailing_slash_in_the_table() -> None:
     )
 
 
+def test_surrounding_whitespace_is_stripped_like_a_trailing_slash() -> None:
+    settings = Settings(_env_file=None, cloud_base_url="  https://cloud.example.test/v1/  ")
+
+    assert settings.cloud_base_url == "https://cloud.example.test/v1"
+    assert settings.resolved_cloud_base_url == "https://cloud.example.test/v1"
+
+
+# ---------------------------------------------------------------------------
+# Uncomposable base URLs are rejected in both layers (amended item 18)
+# ---------------------------------------------------------------------------
+
+UNFORMABLE_BASE_URLS = [
+    "https://cloud.example.test/v1?x=1",
+    "https://cloud.example.test/v1#frag",
+]
+UNFORMABLE_IDS = ["query", "fragment"]
+
+
+@pytest.mark.parametrize("value", UNFORMABLE_BASE_URLS, ids=UNFORMABLE_IDS)
+def test_settings_reject_a_query_or_fragment_base_url(value: str) -> None:
+    """The client appends ``/chat/completions``; a query/fragment breaks it."""
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None, cloud_base_url=value)
+
+    message = str(excinfo.value)
+    assert "KHALEEV_CLOUD_BASE_URL" in message
+    assert "query string" in message
+    assert "fragment" in message
+    assert "/chat/completions" in message
+    assert "malformed request URL" in message
+
+
+@pytest.mark.parametrize("value", UNFORMABLE_BASE_URLS, ids=UNFORMABLE_IDS)
+def test_a_directly_constructed_generator_rejects_a_query_or_fragment(
+    value: str,
+) -> None:
+    """A programmatic caller cannot bypass the settings validator."""
+    with pytest.raises(GeneratorNotConfiguredError) as excinfo:
+        CloudGenerator(API_KEY, MODEL, base_url=value)
+
+    message = str(excinfo.value)
+    assert "KHALEEV_CLOUD_BASE_URL" in message
+    assert "/chat/completions" in message
+    assert "malformed request URL" in message
+    assert API_KEY not in message
+
+
+def test_a_directly_constructed_generator_strips_surrounding_whitespace() -> None:
+    generator = CloudGenerator(
+        API_KEY, MODEL, base_url="  https://cloud.example.test/v1/  "
+    )
+
+    assert generator.base_url == "https://cloud.example.test/v1"
+    assert generator.completions_url == "https://cloud.example.test/v1/chat/completions"
+
+
+def test_a_duplicated_path_slash_is_rejected_in_both_layers() -> None:
+    """``https://host//v1//`` would compose ``//v1/chat/completions``."""
+    value = "https://cloud.example.test//v1//"
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None, cloud_base_url=value)
+    assert "KHALEEV_CLOUD_BASE_URL" in str(excinfo.value)
+
+    with pytest.raises(GeneratorNotConfiguredError) as excinfo:
+        CloudGenerator(API_KEY, MODEL, base_url=value)
+    assert "KHALEEV_CLOUD_BASE_URL" in str(excinfo.value)
+
+
 # ---------------------------------------------------------------------------
 # Validation with actionable messages
 # ---------------------------------------------------------------------------
@@ -209,6 +292,22 @@ def test_an_unknown_provider_is_rejected_even_with_an_explicit_base_url() -> Non
         Settings(_env_file=None, cloud_provider="together", cloud_base_url=BASE_URL)
 
     assert "KHALEEV_CLOUD_PROVIDER" in str(excinfo.value)
+
+
+def test_github_is_rejected_as_an_unknown_provider() -> None:
+    """The preset is dropped: GitHub Models was retired on 2026-07-30."""
+    assert "github" not in CLOUD_PROVIDER_BASE_URLS
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None, cloud_provider="github")
+
+    # Pydantic echoes the rejected input in a separate field, so the absence
+    # check is against our message, which lists exactly the five names.
+    message = excinfo.value.errors()[0]["msg"]
+    assert "KHALEEV_CLOUD_PROVIDER" in message
+    for accepted in ("openai", "openrouter", "groq", "gemini", "cerebras"):
+        assert accepted in message
+    assert "github" not in message
 
 
 @pytest.mark.parametrize(
