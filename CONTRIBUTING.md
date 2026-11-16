@@ -10,8 +10,8 @@ what has to pass before a change is proposed, and the constraints a change must 
 - **Python 3.11 or newer.** `backend/pyproject.toml` declares `requires-python = ">=3.11"`; uv
   resolves an interpreter that satisfies it, so the interpreter on your PATH is a hint rather than a
   gate.
-- **Node 20.19 or newer, or any 22.12 or newer release**, plus npm. That is Vite 8's `engines`
-  floor; the CI workflow pins Node 20, which resolves to the latest 20.x.
+- **Node 24** (see `.nvmrc`), plus npm. Develop and verify on Node 24; the floor Vite 8 declares in
+  `frontend/package.json` is `^20.19.0 || >=22.12.0`, and CI reads the same `.nvmrc`.
 - **No API keys.** Every core feature works with no key configured.
 - **Ollama** only if you want to ask a question or run an eval with the default local generator.
   Uploading, listing, page text, golden-set loading and run history all work without it.
