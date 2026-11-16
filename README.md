@@ -42,6 +42,7 @@ a local Ollama model.
 15. [Known gaps](#known-gaps)
 16. [API surface](#api-surface)
 17. [Contributing and security](#contributing-and-security)
+18. [License](#license)
 
 ---
 
@@ -635,3 +636,12 @@ request-validation 422 keeps its standard `detail` list shape.
 local-first constraints. Report vulnerabilities privately through
 [SECURITY.md](SECURITY.md), never in a public issue. Participation is covered by
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## License
+
+Khaleev is released under the [MIT License](LICENSE).
+
+It bundles no third-party code beyond the dependencies declared in `frontend/package.json` and
+`backend/pyproject.toml` — all of them MIT, BSD-3-Clause or Apache-2.0, and nothing vendored. The
+models you download for yourself are licensed separately: `all-MiniLM-L6-v2` is Apache-2.0, and the
+default answer model `llama3.1:8b` is under the Llama 3.1 Community License, not MIT.
