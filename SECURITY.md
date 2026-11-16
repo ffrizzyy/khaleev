@@ -12,7 +12,7 @@ Only the latest 0.1.x release gets fixes. There is no long-term support branch.
 
 Report privately through GitHub Security Advisories on this repository: open the **Security** tab
 and choose **Report a vulnerability** (direct link:
-<https://github.com/ffrizzyy/new-project/security/advisories/new>).
+<https://github.com/ffrizzyy/khaleev/security/advisories/new>).
 
 Do not open a public issue for a security problem, and do not include document text, API keys or
 personal file paths in any report.
