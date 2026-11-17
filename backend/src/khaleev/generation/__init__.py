@@ -64,6 +64,7 @@ def build_generator(settings: Settings | None = None) -> Generator:
             config.cloud_api_key,
             config.cloud_model,
             base_url=config.resolved_cloud_base_url,
+            fallback_models=config.resolved_cloud_fallback_models,
         )
 
     return OllamaGenerator(config.ollama_base_url, config.ollama_model)

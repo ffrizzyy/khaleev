@@ -17,6 +17,8 @@ rejected) so a programmatic caller cannot bypass the settings validation.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import httpx
 
 from khaleev.cloud_providers import DEFAULT_CLOUD_BASE_URL, normalise_cloud_base_url
@@ -26,7 +28,20 @@ DEFAULT_TIMEOUT_SECONDS = 120.0
 
 
 class CloudGenerator:
-    """Answer generation through an OpenAI-compatible chat-completions API."""
+    """Answer generation through an OpenAI-compatible chat-completions API.
+
+    ``fallback_models`` is an ordered OpenRouter hint: the primary stays in
+    ``model`` and only the fallbacks travel in ``models``, which is sent **only**
+    when the list is non-empty so a single-model payload stays byte-identical to
+    today's. The directly constructed client does not re-check the openrouter
+    gate — naming the argument is the explicit opt-in, the same standing pattern
+    as ``base_url`` and ``client`` (Locked intent 19).
+
+    ``last_served_model`` is per call, never accumulated: the response's
+    ``model`` field is recorded after every ``generate()`` when it is a non-empty
+    string, and reset to ``None`` otherwise, so a caller can snapshot which model
+    actually answered this call (Locked intent 19).
+    """
 
     def __init__(
         self,
@@ -36,6 +51,7 @@ class CloudGenerator:
         base_url: str = DEFAULT_CLOUD_BASE_URL,
         client: httpx.Client | None = None,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
+        fallback_models: Sequence[str] = (),
     ) -> None:
         if not api_key.strip():
             raise GeneratorNotConfiguredError(
@@ -55,6 +71,8 @@ class CloudGenerator:
         self.model = model
         self.base_url = resolved_base_url
         self.timeout = timeout
+        self.fallback_models = tuple(fallback_models)
+        self.last_served_model: str | None = None
         self._client = client
 
     @property
@@ -64,10 +82,16 @@ class CloudGenerator:
     def generate(self, prompt: str) -> str:
         """Return the cloud model's answer text for ``prompt``."""
         url = self.completions_url
-        payload = {
+        # A failed call must never leave the previous call's model behind: the
+        # attribute describes this call, and is reset before the request is made.
+        self.last_served_model = None
+        payload: dict[str, object] = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
         }
+        if self.fallback_models:
+            # Only the fallbacks: the primary stays in "model" and is tried first.
+            payload["models"] = list(self.fallback_models)
         headers = {"Authorization": f"Bearer {self.api_key}"}
         response = self._post(url, payload, headers)
 
@@ -87,6 +111,12 @@ class CloudGenerator:
                 f"cloud generator at {url} returned a response that is not JSON. "
                 "Check the configured cloud endpoint and retry."
             ) from exc
+
+        # Record which model actually answered, right after the body is read.
+        # Only a non-empty string counts; a missing/odd value leaves None rather
+        # than inventing one (Locked intent 19's degradation rule).
+        served = data.get("model") if isinstance(data, dict) else None
+        self.last_served_model = served if isinstance(served, str) and served.strip() else None
 
         text = self._answer_text(data)
         if text is None or not text.strip():

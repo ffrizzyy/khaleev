@@ -106,6 +106,7 @@ class EvalReport:
     hit_rate: float
     faithfulness: float
     entries: tuple[EvalEntryResult, ...]
+    served_models: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.k < 1:
@@ -117,12 +118,21 @@ class EvalReport:
 
     @property
     def config(self) -> dict[str, Any]:
-        """The run configuration persisted in ``eval_runs.config`` (AC10)."""
+        """The run configuration persisted in ``eval_runs.config`` (AC10).
+
+        ``served_models`` is provenance, not a comparability field: it is merged
+        into the ``generator`` object only when this run reported at least one
+        model, so a fake/Ollama run's config is byte-identical to before and
+        ``"model"`` keeps meaning the configured primary (Locked intent 19).
+        """
+        generator = dict(self.generator)
+        if self.served_models:
+            generator["served_models"] = list(self.served_models)
         return {
             "document_id": self.document_id,
             "k": self.k,
             "embedder_id": self.embedder_id,
-            "generator": dict(self.generator),
+            "generator": generator,
             "scorer_id": self.scorer_id,
             "scorer_version": self.scorer_version,
             "golden_set_revision": self.golden_set_revision,
@@ -209,8 +219,15 @@ def _score_entry(
     scorer: EntailmentScorer,
     settings: Settings,
     data_dir: Path,
+    served_models: list[str],
 ) -> tuple[EvalEntryResult, HitRateEntry, FaithfulnessEntry]:
-    """Retrieve, generate, cite and score exactly one golden entry."""
+    """Retrieve, generate, cite and score exactly one golden entry.
+
+    ``served_models`` is the run-local provenance list: the generator's
+    per-call ``last_served_model`` is snapshotted immediately after
+    ``generate()`` returns, so the report can only ever describe this run's
+    calls (Locked intent 19's hazard rule).
+    """
     retrieved = retrieve(
         document_id,
         entry.question,
@@ -227,6 +244,9 @@ def _score_entry(
         )
 
     answer = generator.generate(build_prompt(entry.question, retrieved.chunks))
+    served = getattr(generator, "last_served_model", None)
+    if isinstance(served, str) and served:
+        served_models.append(served)
     citations = parse_citations(answer, retrieved)
     scored = score_answer(
         answer,
@@ -286,6 +306,9 @@ def evaluate(
     results: list[EvalEntryResult] = []
     hit_entries: list[HitRateEntry] = []
     faithfulness_entries: list[FaithfulnessEntry] = []
+    # Run-local provenance: never module state, never an attribute of the
+    # generator, so a previous run's models cannot leak into this report.
+    served_models: list[str] = []
 
     for index, entry in enumerate(golden_set.entries):
         result, hit_entry, scored = _score_entry(
@@ -299,10 +322,14 @@ def evaluate(
             scorer=scorer,
             settings=config,
             data_dir=root,
+            served_models=served_models,
         )
         results.append(result)
         hit_entries.append(hit_entry)
         faithfulness_entries.append(scored)
+
+    # Distinct, first-seen order: a model repeated across entries is one fact.
+    distinct_served = tuple(dict.fromkeys(served_models))
 
     return EvalReport(
         document_id=document_id,
@@ -317,6 +344,7 @@ def evaluate(
         hit_rate=hit_rate(hit_entries, effective_k),
         faithfulness=faithfulness(faithfulness_entries),
         entries=tuple(results),
+        served_models=distinct_served,
     )
 
 

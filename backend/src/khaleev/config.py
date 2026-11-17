@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from khaleev import paths
@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     cloud_model: str | None = None
     cloud_base_url: str | None = None
     cloud_provider: CloudProvider | None = None
+    cloud_fallback_models: str | None = None
     retrieval_k: int = Field(default=5, ge=1)
     max_upload_bytes: int = Field(default=50 * 1024 * 1024, ge=1)
     chunk_size: int = Field(default=600, ge=400, le=800)
@@ -118,6 +119,74 @@ class Settings(BaseSettings):
         if self.cloud_provider is not None:
             return CLOUD_PROVIDER_BASE_URLS[self.cloud_provider].rstrip("/")
         return DEFAULT_CLOUD_BASE_URL
+
+    @property
+    def resolved_cloud_fallback_models(self) -> list[str]:
+        """The ordered fallback model ids, parsed from the comma-separated setting.
+
+        Split on ``,``, strip every entry, drop the empties, keep the user's
+        order. Absent, ``""``, whitespace-only and commas-only all mean *no
+        fallbacks* — deliberately not an error, unlike ``KHALEEV_CLOUD_BASE_URL``
+        where the empty string is invalid (Locked intent 19): "no fallbacks" is a
+        meaningful state, not a third resolution path.
+        """
+        raw = self.cloud_fallback_models
+        if raw is None:
+            return []
+        return [entry.strip() for entry in raw.split(",") if entry.strip()]
+
+    @model_validator(mode="after")
+    def _valid_cloud_fallback_models(self) -> Settings:
+        """Reject a bad fallback list — but only while cloud generation is selected.
+
+        The list is dormant on ``KHALEEV_GENERATOR=ollama``, exactly like the
+        other cloud settings the local factory ignores (SPEC item 19 as amended
+        2026-11-16), so switching back to the local generator never forces a user
+        to delete a variable. Inside the cloud branch there are three rules: the
+        primary may not be repeated, an entry may not be duplicated (order is
+        priority, so a silent dedupe would hide a mistake), and a non-empty list
+        requires the ``openrouter`` **preset** — ``cloud_provider ==
+        "openrouter"`` and no explicit base URL — because ``models`` is
+        OpenRouter-specific and the preset is the one honest signal the endpoint
+        understands it. Every message names the setting and never the API key.
+        """
+        if self.generator != "cloud":
+            return self
+
+        fallbacks = self.resolved_cloud_fallback_models
+        if not fallbacks:
+            return self
+
+        primary = (self.cloud_model or "").strip()
+        if primary:
+            for entry in fallbacks:
+                if entry == primary:
+                    raise ValueError(
+                        "KHALEEV_CLOUD_FALLBACK_MODELS must not repeat the primary "
+                        f"model '{primary}' from KHALEEV_CLOUD_MODEL: the primary is "
+                        "always tried first, so a copy in the fallback list only "
+                        "hides a mistake in the priority order"
+                    )
+
+        seen: set[str] = set()
+        for entry in fallbacks:
+            if entry in seen:
+                raise ValueError(
+                    f"KHALEEV_CLOUD_FALLBACK_MODELS lists '{entry}' more than once: "
+                    "the entries are tried in priority order, so every model may "
+                    "appear only once"
+                )
+            seen.add(entry)
+
+        if self.cloud_provider != "openrouter" or self.cloud_base_url is not None:
+            raise ValueError(
+                "KHALEEV_CLOUD_FALLBACK_MODELS is OpenRouter-specific: fallback "
+                "models are accepted only when the cloud endpoint is the OpenRouter "
+                "preset (KHALEEV_CLOUD_PROVIDER=openrouter with "
+                "KHALEEV_CLOUD_BASE_URL unset), not with another provider or an "
+                "explicit base URL"
+            )
+        return self
 
     @property
     def golden_dir(self) -> Path:

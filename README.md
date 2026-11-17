@@ -216,6 +216,7 @@ Remove the line or use an absolute path if you want the default location.
 | `KHALEEV_CLOUD_MODEL` | unset | Optional; required with the cloud key. |
 | `KHALEEV_CLOUD_BASE_URL` | unset (resolves to `https://api.openai.com/v1`) | Optional OpenAI-compatible endpoint; an explicit value always wins over the provider preset. Must be an absolute `http://`/`https://` URL without a query string or fragment; surrounding whitespace and a trailing slash are normalised, and an empty value is rejected. |
 | `KHALEEV_CLOUD_PROVIDER` | unset | Optional preset: `openai`, `openrouter`, `groq`, `gemini`, `cerebras`. Used only when `KHALEEV_CLOUD_BASE_URL` is unset. |
+| `KHALEEV_CLOUD_FALLBACK_MODELS` | unset | Optional comma-separated OpenRouter model ids in priority order, tried after `KHALEEV_CLOUD_MODEL`. Each entry is stripped and empty entries are dropped; empty means no fallbacks (not an error). Cloud generation only, and only with `KHALEEV_CLOUD_PROVIDER=openrouter` and no `KHALEEV_CLOUD_BASE_URL` — the `models` field is OpenRouter-specific and is refused elsewhere; a repeated primary or a duplicated entry is refused too. WARNING: a `:free` entry that falls back to a paid entry is billed at the paid model's price; keep the list `:free`-only (primary included) to guarantee zero cost. |
 | `KHALEEV_RETRIEVAL_K` | `5` | Top-k chunks per question; recorded with every eval run. |
 | `KHALEEV_CHUNK_SIZE` | `600` | Chunk length in characters, validated to 400–800. |
 | `KHALEEV_CHUNK_OVERLAP_RATIO` | `0.12` | Overlap between consecutive chunks, validated to 0.10–0.15. |
@@ -229,6 +230,11 @@ is never sent off-machine.
 
 The cloud endpoint and provider are configured by environment or `backend/.env` only; they are
 deliberately not exposed by `GET`/`PUT /api/config`.
+
+With `KHALEEV_CLOUD_FALLBACK_MODELS` set, a fallback request may be answered by a provider you did
+not name in `KHALEEV_CLOUD_MODEL`, so document text can reach that provider too — the opt-in and
+privacy trade-offs of the cloud path apply to every model in the list, not only the primary. The
+free→paid warning above applies for the same reason: a paid fallback is billed at the paid price.
 
 ## Data directory layout
 
