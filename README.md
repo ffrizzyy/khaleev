@@ -197,8 +197,10 @@ mode; the `-- --run` form is the CI-equivalent single pass.
 ## Configuration
 
 Settings come from `KHALEEV_*` environment variables or a `backend/.env` file (copy
-`backend/.env.example`). Every setting has a working local default, so `Settings()` constructs with
-no environment at all.
+`backend/.env.example`). The file is read explicitly through `load_settings()`, which resolves it
+against the current working directory — so `backend/.env` applies when the app is started from
+`backend/`. `Settings()` itself is environment-only and never reads a dotenv file; every setting has
+a working local default either way.
 
 One trap in the example file: it sets `KHALEEV_DATA_DIR=./data`, and a **relative** data directory
 resolves against the process working directory. Copying `.env.example` unchanged and starting the
@@ -514,7 +516,7 @@ real lists from `backend/pyproject.toml` and `frontend/package.json`.
 | --- | --- |
 | `fastapi` | HTTP API and typed request/response models. |
 | `python-multipart` | Required by FastAPI to parse the multipart PDF upload. |
-| `pydantic-settings` | `Settings`, with `KHALEEV_*` env vars and `.env` support. |
+| `pydantic-settings` | `Settings` and `load_settings()`, with `KHALEEV_*` env vars and explicit `.env` support. |
 | `sqlalchemy` | ORM and SQLite access for documents, chunks, golden sets and eval history. |
 | `alembic` | Schema migrations; the initial migration is the one-way door for the schema. |
 | `pypdf` | Per-page text extraction from uploaded PDFs. |

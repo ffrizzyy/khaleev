@@ -38,7 +38,7 @@ from fastapi.responses import JSONResponse
 
 from khaleev.api.deps import AppServices
 from khaleev.api.routes import api_router
-from khaleev.config import Settings
+from khaleev.config import Settings, load_settings
 from khaleev.evals.golden import GoldenSetNotFoundError, GoldenSetValidationError
 from khaleev.evals.metrics.hit_rate import MetricUndefinedError
 from khaleev.evals.scorer import EntailmentScorer
@@ -93,14 +93,15 @@ def create_app(
 ) -> FastAPI:
     """Build the application, injecting fakes in tests and nothing in production.
 
-    ``settings`` defaults to ``Settings()`` (environment or ``.env``) and the
+    ``settings`` defaults to ``load_settings()`` — the process environment plus
+    ``backend/.env`` when the app is started from ``backend/`` — and the
     embedder/generator/scorer are built only when a route first needs them, so
     importing this module never creates a directory, loads a model, or opens a
     socket.
     """
     application = FastAPI(title=APP_TITLE, version=APP_VERSION, lifespan=_lifespan)
     application.state.services = AppServices(
-        settings if settings is not None else Settings(),
+        settings if settings is not None else load_settings(),
         embedder=embedder,
         generator=generator,
         scorer=scorer,

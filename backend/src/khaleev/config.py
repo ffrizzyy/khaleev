@@ -1,12 +1,17 @@
 """Application settings for Khaleev.
 
-Values come from ``KHALEEV_*`` environment variables (or a local ``.env``
-file), and every one has a working local default: the app runs with zero API
-keys (SPEC Locked intent #10, #11, AC3). That includes the optional cloud
-endpoint: ``cloud_base_url`` and ``cloud_provider`` both default to ``None``,
-and the resolved endpoint is then today's OpenAI URL, so an existing ``.env``
-behaves exactly as it did before Locked intent 18. Nothing here creates
-directories; call ``Settings.ensure_data_dir`` for that.
+``Settings`` is **environment-only**: it reads ``KHALEEV_*`` process environment
+variables plus its field defaults, and never a dotenv file. Reading ``.env`` is
+an explicit act through ``load_settings()``, which is the only dotenv reader
+here and resolves the file against the current working directory
+(``backend/.env`` when the app is started from ``backend/``).
+
+Every setting has a working local default: the app runs with zero API keys
+(SPEC Locked intent #10, #11, AC3). That includes the optional cloud endpoint:
+``cloud_base_url`` and ``cloud_provider`` both default to ``None``, and the
+resolved endpoint is then today's OpenAI URL, so an existing ``.env`` behaves
+exactly as it did before Locked intent 18. Nothing here creates directories;
+call ``Settings.ensure_data_dir`` for that.
 """
 
 from __future__ import annotations
@@ -26,6 +31,7 @@ from khaleev.cloud_providers import (
 )
 
 ENV_PREFIX = "KHALEEV_"
+ENV_FILE_NAME = ".env"
 
 CloudProvider = Literal["openai", "openrouter", "groq", "gemini", "cerebras"]
 
@@ -39,7 +45,6 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix=ENV_PREFIX,
-        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -196,3 +201,20 @@ class Settings(BaseSettings):
     def ensure_data_dir(self) -> paths.DataPaths:
         """Create the data directory layout and return its resolved paths."""
         return paths.DataPaths.from_data_dir(self.data_dir).create()
+
+
+def load_settings(**overrides: object) -> Settings:
+    """Build settings, reading ``.env`` from the current working directory.
+
+    This is the single dotenv entry point in the application: it passes
+    ``_env_file`` explicitly, resolves the file against the process working
+    directory exactly like the constructor used to (``backend/.env`` when the
+    app is started from ``backend/``), and keeps the model config's ``utf-8``
+    encoding. Keyword overrides win over the file without disabling it.
+
+    Nothing is caught or delayed: a malformed ``.env`` raises the same
+    ``pydantic.ValidationError`` at the same moment it always did. Callers that
+    want a file-free load construct ``Settings`` directly, which is
+    environment-only.
+    """
+    return Settings(_env_file=ENV_FILE_NAME, **overrides)

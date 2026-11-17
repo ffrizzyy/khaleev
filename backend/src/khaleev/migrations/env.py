@@ -17,7 +17,7 @@ from sqlalchemy import Connection, Engine
 from sqlalchemy import create_engine as create_sqlalchemy_engine
 from sqlalchemy.engine import URL
 
-from khaleev.config import Settings
+from khaleev.config import load_settings
 from khaleev.db import create_engine, database_path
 from khaleev.models import Base
 
@@ -27,7 +27,7 @@ target_metadata = Base.metadata
 
 def _settings_database_url() -> URL:
     """Return the URL of the SQLite file inside ``Settings.data_dir``."""
-    return URL.create("sqlite+pysqlite", database=str(database_path(Settings().data_dir)))
+    return URL.create("sqlite+pysqlite", database=str(database_path(load_settings().data_dir)))
 
 
 def _configured_url() -> str | None:
@@ -40,7 +40,7 @@ def _migration_engine() -> Engine:
     configured = _configured_url()
     if configured is not None:
         return create_sqlalchemy_engine(configured)
-    return create_engine(Settings().data_dir)
+    return create_engine(load_settings().data_dir)
 
 
 def run_migrations_offline() -> None:
