@@ -27,7 +27,7 @@
  * notice. No new request is issued for any of it.
  */
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useState } from "react";
 import type { FormEvent, ReactElement } from "react";
 import { Link } from "react-router-dom";
 
@@ -366,7 +366,10 @@ export function EvalDashboard(): ReactElement {
   // Library already loaded, and drop to the plain empty state when it is gone.
   // No request is minted here (the page's request set is pinned by its tests);
   // a reload straight onto this page is covered by the API's own 404s above.
-  useEffect(() => {
+  // It is a layout effect, not a plain effect: a layout effect runs before the
+  // browser paints, so the discard is committed before the stale selection could
+  // be shown — a plain effect runs after paint and would flash it for one frame.
+  useLayoutEffect(() => {
     reconcileSelection();
   }, []);
 

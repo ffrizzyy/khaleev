@@ -113,10 +113,13 @@ class CloudGenerator:
             ) from exc
 
         # Record which model actually answered, right after the body is read.
-        # Only a non-empty string counts; a missing/odd value leaves None rather
-        # than inventing one (Locked intent 19's degradation rule).
+        # Only a non-empty string counts, and it is stored stripped: a provider
+        # that pads its id must not look like a second model in the run's
+        # provenance. A missing/odd/blank value leaves None rather than inventing
+        # one (Locked intent 19's degradation rule).
         served = data.get("model") if isinstance(data, dict) else None
-        self.last_served_model = served if isinstance(served, str) and served.strip() else None
+        stripped = served.strip() if isinstance(served, str) else None
+        self.last_served_model = stripped or None
 
         text = self._answer_text(data)
         if text is None or not text.strip():

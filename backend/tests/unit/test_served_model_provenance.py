@@ -290,6 +290,37 @@ def test_each_run_snapshots_only_its_own_calls(migrated_session: Session) -> Non
     assert second.config["generator"]["served_models"] == ["b"]
 
 
+def test_a_padded_served_model_is_recorded_stripped(migrated_session: Session) -> None:
+    """A provider that pads its model id must not look like a second model."""
+    settings = _settings()
+    embedder = FakeEmbedder()
+    document_id, _ = _document_with_golden(migrated_session, settings, embedder, count=1)
+    generator = _cloud_generator(["  router/model:free  "])
+
+    generator.generate("prompt")
+    assert generator.last_served_model == "router/model:free"
+
+    report = _evaluate(migrated_session, settings, document_id, generator)
+
+    assert report.served_models == ("router/model:free",)
+    assert report.config["generator"]["served_models"] == ["router/model:free"]
+
+
+def test_a_whitespace_only_served_model_records_nothing(migrated_session: Session) -> None:
+    settings = _settings()
+    embedder = FakeEmbedder()
+    document_id, _ = _document_with_golden(migrated_session, settings, embedder, count=2)
+    generator = _cloud_generator(["   "])
+
+    generator.generate("prompt")
+    assert generator.last_served_model is None
+
+    report = _evaluate(migrated_session, settings, document_id, generator)
+
+    assert report.served_models == ()
+    assert "served_models" not in report.config["generator"]
+
+
 def test_the_persisted_run_carries_served_models_and_the_signature_is_unchanged(
     migrated_session: Session,
 ) -> None:

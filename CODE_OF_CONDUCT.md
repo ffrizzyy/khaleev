@@ -67,7 +67,7 @@ All complaints will be reviewed and investigated promptly and fairly.
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.
 
-TODO: replace with a contact address if you want one.
+There is no separate contact address: the GitHub handle @ffrizzyy and a private Security Advisory on this repository are the enforcement contact.
 
 ## Enforcement Guidelines
 

@@ -21,7 +21,7 @@
  * state only and issues no request.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { Link } from "react-router-dom";
 
@@ -44,7 +44,10 @@ export function Chat(): ReactElement {
   // app already loaded (the Library records it) so a deleted document shows the
   // plain empty state instead of a confident "Questioning <title>" strip. This
   // reads module state only: it mints no request, which the page's tests pin.
-  useEffect(() => {
+  // It is a layout effect, not a plain effect: a layout effect runs before the
+  // browser paints, so the discard is committed before the stale title could be
+  // shown — a plain effect runs after paint and would flash it for one frame.
+  useLayoutEffect(() => {
     reconcileSelection();
   }, []);
 
