@@ -1,5 +1,7 @@
 # Khaleev
 
+[![CI](https://github.com/ffrizzyy/khaleev/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ffrizzyy/khaleev/actions/workflows/ci.yml) [![Release v0.1.0](https://img.shields.io/badge/release-v0.1.0-blue)](https://github.com/ffrizzyy/khaleev/releases/tag/v0.1.0) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](backend/pyproject.toml) [![Node 24](https://img.shields.io/badge/node-24-brightgreen)](.nvmrc)
+
 Khaleev is a single-user, local-first document Q&A application. You upload PDFs, ask questions
 against **one selected document**, and get answers that always carry the source page numbers the
 answer was drawn from. On top of that it ships an evaluation layer: a hand-curated golden Q&A set
@@ -11,15 +13,25 @@ key required. Embeddings are computed locally with `sentence-transformers`, vect
 FAISS file per document, metadata lives in a local SQLite file, and the default answer generator is
 a local Ollama model.
 
+```bash
+cd backend  && uv sync && uv run uvicorn khaleev.app:app --reload --port 8000
+cd frontend && npm install && npm run dev      # then open http://localhost:5173
+```
+
+Run the two lines in separate terminals. The embedding model downloads on your first upload and the
+answer model is one `ollama pull llama3.1:8b` away; the full run-through is
+[Zero-key local setup](#zero-key-local-setup).
+
 - **Stack:** FastAPI (Python 3.11+) + SQLite + FAISS + sentence-transformers; React 19 + Vite +
   TypeScript frontend.
 - **Layout:** monorepo — `backend/` (package `khaleev`) and `frontend/`.
 - **Docs:** [docs/architecture.md](docs/architecture.md) explains the request flow and module map;
   [docs/references/README.md](docs/references/README.md) is the home for future reference material.
-- **Status:** v0.1.0. The v1 feature set in `SPEC.md` is implemented. The database schema is
-  created and migrated automatically when the API starts, so a clean `uv sync` plus the documented
-  run command is all a fresh install needs. The frontend is styled with hand-written CSS (no CSS
-  framework); see [Frontend styling](#frontend-styling).
+- **Status:** [v0.1.0](https://github.com/ffrizzyy/khaleev/releases/tag/v0.1.0). The v1 feature set
+  in `SPEC.md` is implemented. The database schema is created and migrated automatically when the
+  API starts, so a clean `uv sync` plus the documented run command is all a fresh install needs. The
+  frontend is styled with hand-written CSS (no CSS framework); see
+  [Frontend styling](#frontend-styling).
 
 ---
 
@@ -31,18 +43,19 @@ a local Ollama model.
 4. [First-run model downloads](#first-run-model-downloads)
 5. [Run, test and lint commands](#run-test-and-lint-commands)
 6. [Configuration](#configuration)
-7. [Data directory layout](#data-directory-layout)
-8. [Walkthrough: your first cited answer](#walkthrough-your-first-cited-answer)
-9. [Walkthrough: your first eval run](#walkthrough-your-first-eval-run)
-10. [Metric contracts](#metric-contracts)
-11. [The offline test guarantee](#the-offline-test-guarantee)
-12. [Manual check against a real Ollama instance](#manual-check-against-a-real-ollama-instance)
-13. [Runtime dependencies added](#runtime-dependencies-added)
-14. [Frontend styling](#frontend-styling)
-15. [Known gaps](#known-gaps)
-16. [API surface](#api-surface)
-17. [Contributing and security](#contributing-and-security)
-18. [License](#license)
+7. [Cloud generation (optional)](#cloud-generation-optional)
+8. [Data directory layout](#data-directory-layout)
+9. [Walkthrough: your first cited answer](#walkthrough-your-first-cited-answer)
+10. [Walkthrough: your first eval run](#walkthrough-your-first-eval-run)
+11. [Metric contracts](#metric-contracts)
+12. [The offline test guarantee](#the-offline-test-guarantee)
+13. [Manual check against a real Ollama instance](#manual-check-against-a-real-ollama-instance)
+14. [Runtime dependencies added](#runtime-dependencies-added)
+15. [Frontend styling](#frontend-styling)
+16. [Known gaps](#known-gaps)
+17. [API surface](#api-surface)
+18. [Contributing and security](#contributing-and-security)
+19. [License](#license)
 
 ---
 
@@ -218,7 +231,7 @@ Remove the line or use an absolute path if you want the default location.
 | `KHALEEV_CLOUD_MODEL` | unset | Optional; required with the cloud key. |
 | `KHALEEV_CLOUD_BASE_URL` | unset (resolves to `https://api.openai.com/v1`) | Optional OpenAI-compatible endpoint; an explicit value always wins over the provider preset. Must be an absolute `http://`/`https://` URL without a query string or fragment; surrounding whitespace and a trailing slash are normalised, and an empty value is rejected. |
 | `KHALEEV_CLOUD_PROVIDER` | unset | Optional preset: `openai`, `openrouter`, `groq`, `gemini`, `cerebras`. Used only when `KHALEEV_CLOUD_BASE_URL` is unset. |
-| `KHALEEV_CLOUD_FALLBACK_MODELS` | unset | Optional comma-separated OpenRouter model ids in priority order, tried after `KHALEEV_CLOUD_MODEL`. Each entry is stripped and empty entries are dropped; empty means no fallbacks (not an error). Cloud generation only, and only with `KHALEEV_CLOUD_PROVIDER=openrouter` and no `KHALEEV_CLOUD_BASE_URL` — the `models` field is OpenRouter-specific and is refused elsewhere; a repeated primary or a duplicated entry is refused too. WARNING: a `:free` entry that falls back to a paid entry is billed at the paid model's price; keep the list `:free`-only (primary included) to guarantee zero cost. |
+| `KHALEEV_CLOUD_FALLBACK_MODELS` | unset | Optional comma-separated OpenRouter model ids tried after the primary. See [Cloud generation](#cloud-generation-optional). |
 | `KHALEEV_RETRIEVAL_K` | `5` | Top-k chunks per question; recorded with every eval run. |
 | `KHALEEV_CHUNK_SIZE` | `600` | Chunk length in characters, validated to 400–800. |
 | `KHALEEV_CHUNK_OVERLAP_RATIO` | `0.12` | Overlap between consecutive chunks, validated to 0.10–0.15. |
@@ -228,15 +241,79 @@ of the process lifetime; they never require a key and never discard an injected 
 
 Cloud generation is opt-in only. It is built solely when `KHALEEV_GENERATOR=cloud` **and** both the
 key and the model are set; otherwise the request fails with an actionable 503 and document content
-is never sent off-machine.
+is never sent off-machine. What the endpoint resolves to, how the provider presets and ordered
+fallbacks work, and the provenance an eval run records are all in
+[Cloud generation](#cloud-generation-optional).
 
 The cloud endpoint and provider are configured by environment or `backend/.env` only; they are
 deliberately not exposed by `GET`/`PUT /api/config`.
 
-With `KHALEEV_CLOUD_FALLBACK_MODELS` set, a fallback request may be answered by a provider you did
-not name in `KHALEEV_CLOUD_MODEL`, so document text can reach that provider too — the opt-in and
-privacy trade-offs of the cloud path apply to every model in the list, not only the primary. The
-free→paid warning above applies for the same reason: a paid fallback is billed at the paid price.
+## Cloud generation (optional)
+
+Local Ollama is the default and stays the default: nothing leaves the machine unless all three cloud
+settings are present — `KHALEEV_GENERATOR=cloud`, `KHALEEV_CLOUD_API_KEY` and
+`KHALEEV_CLOUD_MODEL`. Miss any one of them and the ask or eval request fails with an actionable
+503; the app never reaches for a cloud endpoint on its own.
+
+### Presets and endpoint precedence
+
+`KHALEEV_CLOUD_PROVIDER` names one of five OpenAI-compatible presets: `openai`, `openrouter`,
+`groq`, `gemini`, `cerebras`. The resolved endpoint follows one rule:
+
+1. an explicit `KHALEEV_CLOUD_BASE_URL` always wins;
+2. otherwise the preset's base URL applies;
+3. otherwise the endpoint is `https://api.openai.com/v1`.
+
+The base URL must be an absolute `http://`/`https://` URL without a query string, a fragment or a
+duplicated `//` path segment; surrounding whitespace and a trailing slash are normalised, and an
+empty value is rejected rather than read as "unset".
+
+### OpenRouter with `:free` fallbacks
+
+A copy-paste `backend/.env` for the free tier. Note the placeholder key, the preset, and the absent
+base URL — the preset is what supplies the endpoint:
+
+```dotenv
+KHALEEV_GENERATOR=cloud
+KHALEEV_CLOUD_PROVIDER=openrouter
+KHALEEV_CLOUD_API_KEY=<your-openrouter-key>
+KHALEEV_CLOUD_MODEL=google/gemma-4-31b-it:free
+KHALEEV_CLOUD_FALLBACK_MODELS=nvidia/nemotron-3-ultra-550b-a55b:free
+```
+
+The primary travels in the request's `model` field and is tried first; the ordered list travels in
+`models`. That field is sent only when `KHALEEV_GENERATOR=cloud` **and** the provider is the
+`openrouter` preset **and** no explicit base URL is set — `models` is OpenRouter-specific, so it is
+refused everywhere else. Entries are stripped and empty ones dropped. A list that repeats the
+primary, or names the same fallback twice, is refused at startup with a message naming
+`KHALEEV_CLOUD_FALLBACK_MODELS`; order is priority, so a silent dedupe would hide a mistake. An
+empty value means no fallbacks, which is a normal state rather than an error.
+
+### Free tiers and billing
+
+A `:free` entry is only free while a free model answers. If a request falls through to a paid entry,
+the answer is billed at that paid model's price, so keep every entry `:free` — the primary included —
+to guarantee zero cost. The app deliberately does not enforce this: it cannot know a provider's
+pricing, so the list you write is the list it sends.
+
+### Model provenance in eval runs
+
+Each cloud call records the model that actually answered, read from the response's `model` field and
+stripped of surrounding whitespace; a blank or missing field records nothing rather than inventing
+an id. An eval run collects those ids across its entries, deduplicated in first-seen order, and
+persists them as `config["generator"]["served_models"]` on that run.
+
+The key is **absent** — not `null`, not `[]` — when no model was reported. That is the fake and
+local (Ollama) path, and every run written before the field existed, so those runs look exactly as
+they did before. `served_models` is provenance, not comparability: it is not one of the four
+signature fields (golden-set revision, `k`, embedder, scorer), so a run that used a fallback is
+never flagged for it.
+
+### Privacy
+
+Every model in the list can receive document text, because a fallback is the same question answered
+by another model. The opt-in covers the whole list, not just the primary: put an id there only if
+you would let that model's operator read the document you are asking about.
 
 ## Data directory layout
 
