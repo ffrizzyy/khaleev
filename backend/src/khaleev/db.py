@@ -7,7 +7,9 @@ rather than the current working directory.
 SQLite does not enforce foreign keys unless asked, so ``create_engine`` installs
 a ``connect`` listener that turns on ``PRAGMA foreign_keys`` for every
 connection. That is what makes ``ON DELETE CASCADE`` from ``documents`` actually
-delete chunks, golden sets and eval history (AC11).
+delete chunks, golden sets and eval history (AC11). The same listener puts the
+database in WAL mode with a busy timeout, so one slow ingest must not turn a
+concurrent write into a 500.
 """
 
 from __future__ import annotations
@@ -35,11 +37,19 @@ def database_url(data_dir: Path) -> URL:
     return URL.create("sqlite+pysqlite", database=str(database_path(data_dir)))
 
 
-def _enable_sqlite_foreign_keys(dbapi_connection: Any, _connection_record: Any) -> None:
-    """Turn on foreign-key enforcement for one SQLite connection."""
+def _configure_sqlite_connection(dbapi_connection: Any, _connection_record: Any) -> None:
+    """Apply the pragmas every SQLite connection needs.
+
+    Foreign keys make ``ON DELETE CASCADE`` real (AC11). WAL keeps readers out of
+    the writer's way, the busy timeout makes a competing writer wait instead of
+    failing at once, and ``synchronous=NORMAL`` is the standard WAL companion.
+    """
     cursor = dbapi_connection.cursor()
     try:
         cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.execute("PRAGMA synchronous=NORMAL")
     finally:
         cursor.close()
 
@@ -53,7 +63,7 @@ def create_engine(data_dir: Path, *, echo: bool = False) -> Engine:
     root = paths.DataPaths.from_data_dir(data_dir).root
     root.mkdir(parents=True, exist_ok=True)
     engine = create_sqlalchemy_engine(database_url(root), echo=echo)
-    event.listen(engine, "connect", _enable_sqlite_foreign_keys)
+    event.listen(engine, "connect", _configure_sqlite_connection)
     return engine
 
 

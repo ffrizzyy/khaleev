@@ -31,6 +31,13 @@ CITATION_INSTRUCTION = (
     "answer the question, say so and cite the pages you consulted."
 )
 
+#: The prose contract handed to the model. The interface renders text literally,
+#: so markdown syntax the model emits shows up as asterisks and hashes.
+PLAIN_PROSE_INSTRUCTION = (
+    "Answer in plain prose only. Do not use markdown: no ** or _ emphasis, no "
+    "headings, no bullet or numbered lists, and no code fences."
+)
+
 
 def build_prompt(question: str, retrieved: Sequence[RetrievedChunk]) -> str:
     """Return the generation prompt for ``question`` over ``retrieved``.
@@ -49,6 +56,7 @@ def build_prompt(question: str, retrieved: Sequence[RetrievedChunk]) -> str:
         "You are Khaleev, a document question-answering assistant.",
         "Answer using ONLY the numbered excerpts below. Do not use outside knowledge.",
         CITATION_INSTRUCTION,
+        PLAIN_PROSE_INSTRUCTION,
         "",
         "EXCERPTS:",
     ]
@@ -73,4 +81,4 @@ def build_prompt(question: str, retrieved: Sequence[RetrievedChunk]) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["CITATION_INSTRUCTION", "build_prompt"]
+__all__ = ["CITATION_INSTRUCTION", "PLAIN_PROSE_INSTRUCTION", "build_prompt"]
